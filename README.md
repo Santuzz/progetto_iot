@@ -1,0 +1,1 @@
+Repository di un progetto IoT inerente allo sviluppo di un incrocio stradale intelligente
