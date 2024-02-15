@@ -1,0 +1,18 @@
+/* Classe per il corpo nascosto */
+.card-body-hidden {
+    display: none;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+/* Classe per il corpo visibile */
+.card-body-visible {
+    max-height: 500px; /* Altezza massima del corpo quando è visibile */
+    transition: max-height 0.3s ease-in-out;
+}
+
+/* Rimuovi il bordo inferiore dell'ultima riga delle tabelle */
+table.table-no-border-bottom > tbody > tr:last-child > td {
+    border-bottom: none;
+}
