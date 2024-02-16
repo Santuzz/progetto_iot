@@ -1,0 +1,7 @@
+{
+    "board": "arduino:avr:uno",
+    "programmer": "avrisp",
+    "port": "/dev/tty.usbmodem11101",
+    "sketch": "arduino/arduino.ino",
+    "output": "arduino-cli_0.35.2_macOS_ARM64"
+}
