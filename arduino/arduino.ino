@@ -1,4 +1,4 @@
-
+//traffic light base
 
 const int redPin = 2;    // Collega il LED rosso al pin 2
 const int yellowPin = 3; // Collega il LED giallo al pin 3
