@@ -1,5 +1,5 @@
 # Django basics
-
+Note per fare cose su django che possono sempre tornare utili
 ## Creazione progetto
 1. creare la cartella del progetto
 2. Controlliamo di avere pipenv ```pipenv —version```
