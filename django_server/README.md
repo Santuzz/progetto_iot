@@ -10,7 +10,7 @@ Note per fare cose su django che possono sempre tornare utili
 6. Per lanciare il progetto ```python manage.py runserver```
 
 ## Applicazioni
-1. Crea una nuova app ```python manage.py startapp NOME_APP```
+1. Crea una nuova app ```python manage.py startapp NOME_APP```  
 	NOTA: i template di quell’app dovranno essere messi all’interno di una sottodirectory che ha lo stesso nome dell’app. In questo modo si fa meno confusione quando bisogna richiamare i template
 2. Registrare l’app nel file settings.py del progetto dentro a INSTALLED_APPS
 3. Aggiurgere il file urls.py nell’app
