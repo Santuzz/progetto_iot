@@ -1,6 +1,6 @@
-#Django basics
+# Django basics
 
-##Creazione progetto
+## Creazione progetto
 1. creare la cartella del progetto
 2. Controlliamo di avere pipenv ```pipenv —version```
 	1. Installare pipenv se non c’è  ```pip3 install pipenv ```
@@ -9,7 +9,7 @@
 5. Creiamo il nostro progetto ```django-admin startproject NOME_PROGETTO ./```
 6. Per lanciare il progetto ```python manage.py runserver```
 
-##Applicazioni
+## Applicazioni
 1. Crea una nuova app ```python manage.py startapp NOME_APP```
 	NOTA: i template di quell’app dovranno essere messi all’interno di una sottodirectory che ha lo stesso nome dell’app. In questo modo si fa meno confusione quando bisogna richiamare i template
 2. Registrare l’app nel file settings.py del progetto dentro a INSTALLED_APPS
@@ -18,6 +18,6 @@
 	```from django.urls import path, include```
 	and ```path('api/', include('REST.urls')),```
 
-##Migrazioni
+## Migrazioni
 1. Crea una migrazione per un app ```python manage.py makemigrations NOME_APP```
 2. Aggiungi le migrazioni al DB ```python manage.py migrate```
