@@ -20,23 +20,22 @@ class Bridge():
         # open serial port
         self.ser = None
         self.portname = None
+        # if self.config.get("Serial", "UseDescription", fallback=False):
+        #    self.portname = self.config.get(
+        #        "Serial", "PortName", fallback="COM1")
+        # else:
+        print("list of available ports: ")
+        ports = serial.tools.list_ports.comports()
 
-        if self.config.get("Serial", "UseDescription", fallback=False):
-            self.portname = self.config.get(
-                "Serial", "PortName", fallback="COM1")
-        else:
-            print("list of available ports: ")
-            ports = serial.tools.list_ports.comports()
-
-            for port in ports:
-                print(port.device)
-                print(port.description)
-                # if self.config.get("Serial", "PortDescription", fallback="arduino").lower() \
-                #         in port.description.lower():
-                #    self.portname = port.device
-                if "/dev/cu.usbmodem11101" in port.device:
-                    self.portname = port.device
-                    break  # Esci dal ciclo una volta trovata la corrispondenza
+        for port in ports:
+            print(port.device)
+            print(port.description)
+            # if self.config.get("Serial", "PortDescription", fallback="arduino").lower() \
+            #         in port.description.lower():
+            #    self.portname = port.device
+            if "/dev/cu.usbmodem1101" in port.device:
+                self.portname = port.device
+                break  # Esci dal ciclo una volta trovata la corrispondenza
 
         try:
             if self.portname is not None:
@@ -98,7 +97,7 @@ class Bridge():
             })
          # Determine the path to data.json relative to the current script
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        json_path = os.path.join(script_dir, '..', 'flask_server', 'data.json')
+        json_path = os.path.join(script_dir, '..', 'data.json')
 
         # Read existing data from data.json
         try:
