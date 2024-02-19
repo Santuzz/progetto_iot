@@ -33,7 +33,7 @@ class Bridge():
             # if self.config.get("Serial", "PortDescription", fallback="arduino").lower() \
             #         in port.description.lower():
             #    self.portname = port.device
-            if "/dev/cu.usbmodem1101" in port.device:
+            if "/dev/cu.usbmodem1101" or "COM4" in port.device:
                 self.portname = port.device
                 break  # Esci dal ciclo una volta trovata la corrispondenza
 
