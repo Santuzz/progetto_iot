@@ -6,18 +6,22 @@ import supervision as sv
 
 import numpy as np
 
+WIDTH = 1920
+HEIGHT = 1080
+# l'idea è quella di crare un rettangolo per ogni strada in modo da capire quante macchine sono presenti in ogni singola strada che porta all'incrocio
+# rettangolo che occupa metà del video
 ZONE_POLYGON = np.array([
     [0, 0],
-    [1280//2, 0],
-    [1280//2, 720],
-    [0, 720]
+    [WIDTH//2, 0],
+    [WIDTH//2, HEIGHT],
+    [0, HEIGHT]
 ])
 
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="YOLOv8 live")
     parser.add_argument(
-        "--webcam-resolution", nargs=2, default=[1280, 720], type=int
+        "--webcam-resolution", nargs=2, default=[WIDTH, HEIGHT], type=int
     )
     args = parser.parse_args()
     return args
@@ -41,12 +45,23 @@ def main():
 
     zone = sv.PolygonZone(polygon=ZONE_POLYGON,
                           frame_resolution_wh=tuple(args.webcam_resolution))
-    zone_annotator = sv.PolygonZoneAnnotator(zone=zone, color=sv.Color.red())
+
+    # utilizzato per visualizzare nella webcam il numero di oggetti all'interno di ZONE_POLYGON
+    zone_annotator = sv.PolygonZoneAnnotator(
+        zone=zone,
+        color=sv.Color.RED,
+        thickness=2,
+        text_thickness=4,
+        text_scale=2
+    )
     while True:
         ret, frame = capture.read()
 
         result = model(frame)[0]
         detections = sv.Detections.from_ultralytics(result)
+        # cambia la linea sotto per decidere come far riconoscere a YOLO
+        # Guarda il file YOLOv8_class_id.py per il class_id dei vari oggetti riconoscibili
+        detections = detections[detections.class_id == 76]
         print(detections)
         labels = [
             f"{model.model.names[class_id]} {confidence:0.2f}"
