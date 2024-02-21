@@ -82,7 +82,8 @@ def main():
             zone=zone, color=sv.Color.RED, thickness=2, text_thickness=4, text_scale=2)
         for zone in zones
     ]
-    # TODO ottenere il numero di macchine nelle varie zone per poi mandarlo al server
+    # TODO ottenere il numero di macchine nelle varie zone per poi mandarlo al server.
+    # Allo stesso tempo il count deve essere disponibile al bridge dell'arduino con il semaforo
     while True:
         ret, frame = capture.read()
 
