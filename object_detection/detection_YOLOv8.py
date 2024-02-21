@@ -89,7 +89,6 @@ def main():
         result = model(frame)[0]
         detections = sv.Detections.from_ultralytics(result)
         detections = detections[detections.class_id == 76]
-        print(detections)
 
         labels = [
             f"{model.model.names[class_id]} {confidence:0.2f}"
@@ -99,8 +98,10 @@ def main():
 
         frame = box_annotator.annotate(
             scene=frame, detections=detections, labels=labels)
-
+        car_counts = [0]*len(zones)
         for i, zone in enumerate(zones):
+
+            car_counts[i] = zone.current_count
             zone.trigger(detections=detections)
             frame = zone_annotators[i].annotate(scene=frame)
 
