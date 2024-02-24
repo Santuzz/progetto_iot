@@ -28,6 +28,10 @@ class Webcam(models.Model):
     # crossroad = models.OneToOneField(
     #    Crossroad, on_delete=models.CASCADE, primary_key=True)
 
+    def get_crossroad(self):
+        crossroad = Crossroad.objects.get(id=self.crossroad.id).name
+        return crossroad
+
 
 class Trafficlight(models.Model):
     DIRECTION_CHOICES = [
@@ -39,7 +43,7 @@ class Trafficlight(models.Model):
         ('S', 'Straight')
     ]
     id = models.AutoField(primary_key=True)
-    direction = models.CharField(choices=DIRECTION_CHOICES)
+    direction = models.CharField(choices=DIRECTION_CHOICES, max_length=100)
     green_probability = models.FloatField(default=0.5)
     crossroad = models.ForeignKey(
         Crossroad, on_delete=models.CASCADE, null=True)

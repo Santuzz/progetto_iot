@@ -21,3 +21,47 @@ Note per fare cose su django che possono sempre tornare utili
 ## Migrazioni
 1. Crea una migrazione per un app ```python manage.py makemigrations NOME_APP```
 2. Aggiungi le migrazioni al DB ```python manage.py migrate```
+
+
+# REST framework
+
+## Serializer
+Quando arriva una richiesta con dei dati che dovrebbero rappresentare un oggetto vanno serializzati  
+```serializer = WebcamSerializer(data=request.data)```  
+In questo modo django crea un oggetto che diventerà una nuova instance del db con la funzione save.  
+```instance = serializer.save()``` 
+Con il serializer si definisce la nuova instance attraverso un modello e i fields che deve avere.  
+I fileds possono anche essere output di metodi, in questo caso si utilizza *SerializerMethodField* definendone il comportamento attraverso una nuova funzione in cui la nuova instance è vista attraverso la variabile *obj* passata alla funzione.  
+```python
+class WebcamSerializer(serializers.ModelSerializer):
+    crossroad = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Webcam
+        fields = [
+            'id',
+            'cars_count',
+            'active',
+            'crossroad'
+        ]
+
+    def get_crossroad(self, obj):
+        if not isinstance(obj, Webcam):
+            return None
+        return obj.get_crossroad()
+```
+## Generics
+La struttura generale per un generics prevede la definizione di un *queryset* e di una *serializer_class*.
+```python
+class WebcamCreateView(generics.CreateAPIView):
+    queryset = Webcam.objects.all()
+    serializer_class = WebcamSerializer
+
+    # if you don't want to use the default queryset
+    def get_queryset():
+        return Webcam.objects.all()
+
+```
+
+
+

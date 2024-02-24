@@ -16,12 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from init_db import *
 
 urlpatterns = [
     # Include URLs from the REST app under the 'api/' prefix
-    path('api/', include('REST.urls')),
     path("admin/", admin.site.urls),
+    path('api/', include('REST.urls')),
+    path('api-auth/', include('rest_framework.urls'))
 
 ]
 
 # inserire qui gli script utili per quando viene avviato il server
+
+# erase_db()
+# init_db()
