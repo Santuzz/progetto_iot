@@ -11,7 +11,8 @@ center_height = height // 2
 shift_center = 300 // 2
 
 
-# Definizione dei vertici per i quattro triangoli isosceli
+# Definizione dei vertici per i quattro trapezi
+# TODO ridefinire le zone in base alla posizione della cam
 ZONE_POLYGON_UP = np.array([
     [0, 0],
     [width, 0],
@@ -89,7 +90,8 @@ def main():
 
         result = model(frame)[0]
         detections = sv.Detections.from_ultralytics(result)
-        detections = detections[detections.class_id == 76]
+        # riconoscimento delle sole auto (detections.class_id==2)
+        detections = detections[detections.class_id == 2]
 
         labels = [
             f"{model.model.names[class_id]} {confidence:0.2f}"
