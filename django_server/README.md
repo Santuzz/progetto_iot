@@ -51,15 +51,21 @@ class WebcamSerializer(serializers.ModelSerializer):
         return obj.get_crossroad()
 ```
 ## Generics
+I generics solo views pre buildate cal cui interno sono presenti pattern ricorrenti
 La struttura generale per un generics prevede la definizione di un *queryset* e di una *serializer_class*.
+è possibile poi aggiungere dei metodi *perform_* per sovrasscrivere *serializer.save()* utilizzando dati impliciti nella richiesta e non per forza nella parte di dati.  
+
 ```python
 class WebcamCreateView(generics.CreateAPIView):
     queryset = Webcam.objects.all()
     serializer_class = WebcamSerializer
 
     # if you don't want to use the default queryset
-    def get_queryset():
+    def get_queryset(self):
         return Webcam.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 ```
 

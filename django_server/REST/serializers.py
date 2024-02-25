@@ -11,16 +11,16 @@ class WebcamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Webcam
         fields = [
+            'id',
             'cars_count',
             'active',
             'crossroad'
         ]
 
     def get_crossroad(self, obj):
-        print(obj.crossroad)
         if not isinstance(obj, Webcam) or obj.crossroad is None:
             return None
-        return Crossroad.objects.get(id=obj.crossroad).name
+        return Crossroad.objects.get(name=obj.crossroad).id
 
 
 class CrossroadSerializer(serializers.ModelSerializer):

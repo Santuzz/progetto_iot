@@ -9,9 +9,10 @@ from django.http import JsonResponse, HttpRequest
 
 import json
 from django.forms.models import model_to_dict
+from django.shortcuts import get_object_or_404
 
 
-class WebcamCreateView(generics.CreateAPIView):
+""" class WebcamCreateView(generics.CreateAPIView):
     queryset = Webcam.objects.all()
     serializer_class = WebcamSerializer
 
@@ -20,31 +21,36 @@ class WebcamCreateView(generics.CreateAPIView):
         return Webcam.objects.all()
 
 
+class WebcamListCreateView(generics.ListCreateAPIView):
+    queryset = Webcam.objects.all()
+    serializer_class = WebcamSerializer """
+
+
 class WebcamAPI(APIView):
     # authentication
     # ...
 
     def get(self, request, pk=None):
 
-        if pk == None:
-            # creazione di una webcam
-            instance = Webcam.objects.all().order_by("?").first()
-            data = {}
-            if instance:
-                data = WebcamSerializer(instance).data
-            return Response(data, status=201)
-        try:
-            instance = Webcam.objects.get(id=pk)
-        except Webcam.DoesNotExist:
-            return JsonResponse({"error": "Impossibile trovare la webcam specificata"}, status=status.HTTP_404_NOT_FOUND)
-        data = {}
-        if instance:
-            data = WebcamSerializer(instance).data
-
-        return Response(data, status=200)
+        if pk is not None:
+            obj = get_object_or_404(Webcam, pk=pk)
+            data = WebcamSerializer(obj, many=False).data
+            return Response(data, status=status.HTTP_200_OK)
+        qs = Webcam.objects.all()
+        data = WebcamSerializer(qs, many=True).data
+        return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request):
 
+        if 'crossroad' in request.data:
+            crossroad_name = request.data['crossroad'].lower()
+            try:
+                crossroad_instance = Crossroad.objects.get(name=crossroad_name)
+            except Crossroad.DoesNotExist:
+                return Response({"error": f"Crossroad with name '{crossroad_name}' not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Aggiungi l'istanza di Crossroad all'input data
+            request.data['crossroad'] = crossroad_instance.id
         # takes data in input and
         serializer = WebcamSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):

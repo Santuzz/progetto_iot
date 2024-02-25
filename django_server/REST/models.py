@@ -3,6 +3,8 @@ from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 # from geopy.distance import geodesic
 
+# TODO mettere il nome come chiave primaria
+
 
 class Crossroad(models.Model):
     id = models.AutoField(primary_key=True)

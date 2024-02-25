@@ -1,18 +1,52 @@
 import requests
-
-endpoint = "http://localhost:8000/api/crossroad/"
-
-# get_response = requests.post(
-#    endpoint, json={'cars_count': 12, 'active': True, 'crossroad': "stradella"})
-# print(get_response.json())
-
-data = {
-    "name": "Stradella"
-}
-get_response = requests.get(endpoint, json=data)
-print(get_response.json())
+import sys
 
 
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python basics_request.py <parameter>")
+        return
+    id = None
+    param = sys.argv[1]
+    if len(sys.argv) > 2:
+        id = sys.argv[2]
+
+    if param == "get":
+        if id is None:
+            print("Missing 'id' parameter")
+            return
+        # get request with id
+        endpoint = f"http://localhost:8000/api/webcam/{id}/"
+
+        get_response = requests.get(endpoint)
+        print(get_response.json())
+        return
+
+    if param == "list":
+        # get request without id
+        endpoint = f"http://localhost:8000/api/webcam/"
+
+        get_response = requests.get(endpoint)
+        print(get_response.json())
+        return
+
+    if param == "post":
+        endpoint = f"http://localhost:8000/api/webcam/"
+
+        data = {
+            "car_counts": 777,
+            "active": True,
+            "crossroad": "CIAO BELLO"
+        }
+        get_response = requests.post(endpoint, json=data)
+        print(get_response.text)
+        return
+
+    print("Parameters didn't match.")
+
+
+if __name__ == "__main__":
+    main()
 # ---------------- codice per API view django ------------------
 # get a param from the request
 # param = request.GET.get('abc')
