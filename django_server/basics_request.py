@@ -34,12 +34,27 @@ def main():
         endpoint = f"http://localhost:8000/api/webcam/"
 
         data = {
-            "car_counts": 777,
+            "cars_count": 777,
             "active": True,
             "crossroad": "CIAO BELLO"
         }
         get_response = requests.post(endpoint, json=data)
         print(get_response.text)
+        return
+
+    if param == "put":
+        if id is None:
+            print("Missing 'id' parameter")
+            return
+        # get request with id
+        endpoint = f"http://localhost:8000/api/webcam/{id}/"
+        data = {
+            "cars_count": 777,
+            "active": False,
+
+        }
+        get_response = requests.put(endpoint, json=data)
+        print(get_response.json())
         return
 
     print("Parameters didn't match.")

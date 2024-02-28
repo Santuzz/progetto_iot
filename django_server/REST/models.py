@@ -7,8 +7,8 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 
 
 class Crossroad(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
+    # id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, primary_key=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
     creation_date = models.DateTimeField(
@@ -25,14 +25,7 @@ class Webcam(models.Model):
     cars_count = models.IntegerField(default=0)
     active = models.BooleanField(default=False)
     crossroad = models.ForeignKey(
-        Crossroad, on_delete=models.CASCADE, null=True)
-    # per avere una sola webcam ad incrocio sostituire crossroad con il seguente field
-    # crossroad = models.OneToOneField(
-    #    Crossroad, on_delete=models.CASCADE, primary_key=True)
-
-    def get_crossroad(self):
-        crossroad = Crossroad.objects.get(id=self.crossroad.id).name
-        return crossroad
+        Crossroad, on_delete=models.CASCADE, null=True, blank=True)
 
 
 class Trafficlight(models.Model):
@@ -48,6 +41,6 @@ class Trafficlight(models.Model):
     direction = models.CharField(choices=DIRECTION_CHOICES, max_length=100)
     green_probability = models.FloatField(default=0.5)
     crossroad = models.ForeignKey(
-        Crossroad, on_delete=models.CASCADE, null=True)
+        Crossroad, on_delete=models.CASCADE, null=True, blank=True)
 
 # TODO Sensore del particolato per la rilevazione della qualità dell'aria

@@ -26,12 +26,17 @@ class WebcamListCreateView(generics.ListCreateAPIView):
     serializer_class = WebcamSerializer """
 
 
+def clean_crossroad(request):
+    if 'crossroad_name' in request.data and request.data['crossroad_name'] is not None:
+        request.data['crossroad_name'] = request.data['crossroad_name'].lower()
+    return request
+
+
 class WebcamAPI(APIView):
     # authentication
     # ...
 
     def get(self, request, pk=None):
-
         if pk is not None:
             obj = get_object_or_404(Webcam, pk=pk)
             data = WebcamSerializer(obj, many=False).data
@@ -40,17 +45,19 @@ class WebcamAPI(APIView):
         data = WebcamSerializer(qs, many=True).data
         return Response(data, status=status.HTTP_200_OK)
 
+    def put(self, request, pk=None):
+        request = clean_crossroad(request)
+        obj = get_object_or_404(Webcam, pk=pk)
+        if 'crossroad' in request.data and request.data['crossroad'] is None:
+            obj.crossroad = None
+        serializer = WebcamSerializer(obj, data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            instance = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
+
     def post(self, request):
-
-        if 'crossroad' in request.data:
-            crossroad_name = request.data['crossroad'].lower()
-            try:
-                crossroad_instance = Crossroad.objects.get(name=crossroad_name)
-            except Crossroad.DoesNotExist:
-                return Response({"error": f"Crossroad with name '{crossroad_name}' not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            # Aggiungi l'istanza di Crossroad all'input data
-            request.data['crossroad'] = crossroad_instance.id
+        request = clean_crossroad(request)
         # takes data in input and
         serializer = WebcamSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
