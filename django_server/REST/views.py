@@ -32,6 +32,15 @@ def clean_crossroad(request):
     return request
 
 
+class WebcamDestroyView(generics.DestroyAPIView):
+    queryset = Webcam.objects.all()
+    serializer_class = WebcamSerializer()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+        return Response({'message': 'Webcam successfully deleted.'}, status=status.HTTP_204_NO_CONTENT)
+
+
 class WebcamAPI(APIView):
     # authentication
     # ...
@@ -48,22 +57,41 @@ class WebcamAPI(APIView):
     def put(self, request, pk=None):
         request = clean_crossroad(request)
         obj = get_object_or_404(Webcam, pk=pk)
-        if 'crossroad' in request.data and request.data['crossroad'] is None:
+        if 'crossroad_name' in request.data and request.data['crossroad_name'] is None:
             obj.crossroad = None
         serializer = WebcamSerializer(obj, data=request.data)
         if serializer.is_valid(raise_exception=True):
             instance = serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer_data = serializer.data
+            serializer_data["crossroad"] = Webcam.objects.get(
+                id=serializer.data["id"]).crossroad_id
+            print(serializer_data)
+            return Response(serializer_data, status=status.HTTP_202_ACCEPTED)
         return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
         request = clean_crossroad(request)
         # takes data in input and
+        print(request.data)
         serializer = WebcamSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             instance = serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer_data = serializer.data
+            serializer_data["crossroad"] = Webcam.objects.get(
+                id=serializer.data["id"]).crossroad_id
+            print(serializer_data)
+            return Response(serializer_data, status=status.HTTP_201_CREATED)
         return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk=None):
+        delete_view = WebcamDestroyView.as_view()
+        # controllo se l'id esiste
+        try:
+            webcam = Webcam.objects.get(id=pk)
+        except Webcam.DoesNotExist:
+            return Response({'Invalid': 'Webcam specified doesn\'t esxists.'}, status=status.HTTP_404_NOT_FOUND)
+        response = delete_view(request._request, pk=pk)
+        return Response({'message': 'Webcam successfully deleted.'}, status=status.HTTP_201_CREATED)
 
 
 class CrossroadAPI(APIView):
