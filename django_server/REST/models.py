@@ -3,11 +3,11 @@ from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 # from geopy.distance import geodesic
 
-# TODO mettere il nome come chiave primaria
+# TODO Aggiungere un attributo che indichi quante strade sono presenti nell'incrocio
+# streets=models.IntegerField(default=4)
 
 
 class Crossroad(models.Model):
-    # id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, primary_key=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
@@ -18,6 +18,10 @@ class Crossroad(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
+# TODO modificare campo cars_count in modo che contenga un array di N int (numero di macchine per ogni strada)
+# cars_count=ArrayField(models.IntegerField(null=True, blank=True),default=[0, 0, 0, 0], null=True, blank=True)
+    #                                                                      ^__________^ => N
 
 
 class Webcam(models.Model):
