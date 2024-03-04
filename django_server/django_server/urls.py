@@ -28,5 +28,5 @@ urlpatterns = [
 
 # inserire qui gli script utili per quando viene avviato il server
 
-erase_db()
+# erase_db()
 # init_db()

@@ -55,7 +55,6 @@ class WebcamSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         try:
             crossroad_data = validated_data.pop('crossroad_name')
-            print(crossroad_data)
             if crossroad_data is not None:
                 instance.crossroad = Crossroad.objects.get(name=crossroad_data)
             else:

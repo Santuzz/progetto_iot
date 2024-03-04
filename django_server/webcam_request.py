@@ -67,21 +67,24 @@ def main():
             "crossroad_name": "CIAO BELLO"
         }
         get_response = requests.post(endpoint, json=data)
-        get_response = get_response.json()
-        f = input("ciao")
-        id = get_response["id"]
-        if id is None:
-            print("Missing 'id' parameter")
-            return
-        # get request with id
-        endpoint = f"http://localhost:8000/api/webcam/{id}/"
-        data = {
-            "cars_count": 777,
-            "active": False,
-            "crossroad_name": "Stradella"
 
-        }
-        get_response = requests.put(endpoint, json=data)
+        f = input("ciao")
+        if "id" in get_response.json():
+            get_response = get_response.json()
+            id = get_response["id"]
+            if id is None:
+                print("Missing 'id' parameter")
+                return
+        # get request with id
+            endpoint = f"http://localhost:8000/api/webcam/{id}/"
+            data = {
+                "cars_count": 777,
+                "active": False,
+                "crossroad_name": "Stradella"
+
+            }
+            get_response = requests.put(endpoint, json=data)
+        print(get_response.text)
         return
 
     if param == "delete":

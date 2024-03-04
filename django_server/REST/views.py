@@ -11,7 +11,6 @@ import json
 from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
 
-
 """ class WebcamCreateView(generics.CreateAPIView):
     queryset = Webcam.objects.all()
     serializer_class = WebcamSerializer
@@ -24,6 +23,49 @@ from django.shortcuts import get_object_or_404
 class WebcamListCreateView(generics.ListCreateAPIView):
     queryset = Webcam.objects.all()
     serializer_class = WebcamSerializer """
+
+
+def _get_queryset(klass):
+    """
+    Return a QuerySet or a Manager.
+    Duck typing in action: any class with a `get()` method (for
+    get_object_or_404) or a `filter()` method (for get_list_or_404) might do
+    the job.
+    """
+    # If it is a model class or anything else with ._default_manager
+    if hasattr(klass, "_default_manager"):
+        return klass._default_manager.all()
+    return klass
+
+
+def get_object_or_404(klass, *args, **kwargs):
+    """
+    Use get() to return an object, or raise an Http404 exception if the object
+    does not exist.
+
+    klass may be a Model, Manager, or QuerySet object. All other passed
+    arguments and keyword arguments are used in the get() query.
+
+    Like with QuerySet.get(), MultipleObjectsReturned is raised if more than
+    one object is found.
+    """
+    queryset = _get_queryset(klass)
+
+    if not hasattr(queryset, "get"):
+        klass__name = (
+            klass.__name__ if isinstance(
+                klass, type) else klass.__class__.__name__
+        )
+        raise ValueError(
+            "First argument to get_object_or_404() must be a Model, Manager, "
+            "or QuerySet, not '%s'." % klass__name
+        )
+    try:
+        klass__name = (klass.__name__ if isinstance(
+            klass, type) else klass.__class__.__name__)
+        return queryset.get(*args, **kwargs)
+    except queryset.model.DoesNotExist:
+        return Response({"Invalid": "%s instance not found" % klass__name}, status=status.HTTP_404_NOT_FOUND)
 
 
 def clean_crossroad(request):
@@ -48,6 +90,8 @@ class WebcamAPI(APIView):
     def get(self, request, pk=None):
         if pk is not None:
             obj = get_object_or_404(Webcam, pk=pk)
+            if isinstance(obj, Response):
+                return obj
             data = WebcamSerializer(obj, many=False).data
             return Response(data, status=status.HTTP_200_OK)
         qs = Webcam.objects.all()
@@ -57,8 +101,13 @@ class WebcamAPI(APIView):
     def put(self, request, pk=None):
         request = clean_crossroad(request)
         obj = get_object_or_404(Webcam, pk=pk)
+        if isinstance(obj, Response):
+            return obj
         if 'crossroad_name' in request.data and request.data['crossroad_name'] is None:
             obj.crossroad = None
+        obj = get_object_or_404(Crossroad, name=request.data["crossroad_name"])
+        if isinstance(obj, Response):
+            return obj
         serializer = WebcamSerializer(obj, data=request.data)
         if serializer.is_valid(raise_exception=True):
             instance = serializer.save()
@@ -73,6 +122,9 @@ class WebcamAPI(APIView):
         request = clean_crossroad(request)
         # takes data in input and
         print(request.data)
+        obj = get_object_or_404(Crossroad, name=request.data["crossroad_name"])
+        if isinstance(obj, Response):
+            return obj
         serializer = WebcamSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             instance = serializer.save()
@@ -86,10 +138,9 @@ class WebcamAPI(APIView):
     def delete(self, request, pk=None):
         delete_view = WebcamDestroyView.as_view()
         # controllo se l'id esiste
-        try:
-            webcam = Webcam.objects.get(id=pk)
-        except Webcam.DoesNotExist:
-            return Response({'Invalid': 'Webcam specified doesn\'t esxists.'}, status=status.HTTP_404_NOT_FOUND)
+        obj = get_object_or_404(Webcam, pk=pk)
+        if isinstance(obj, Response):
+            return obj
         response = delete_view(request._request, pk=pk)
         return Response({'message': 'Webcam successfully deleted.'}, status=status.HTTP_201_CREATED)
 
@@ -102,7 +153,7 @@ class CrossroadAPI(APIView):
             name = request.data["name"].lower()
             instance = Crossroad.objects.get(name=name)
         except (Crossroad.DoesNotExist, KeyError):
-            return JsonResponse({"error": f"Impossibile trovare l\'incrocio specificato"}, status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse({"Invalid": f"Impossibile trovare l\'incrocio specificato"}, status=status.HTTP_404_NOT_FOUND)
 
         data = {}
         if instance:

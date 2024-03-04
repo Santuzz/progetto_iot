@@ -15,3 +15,4 @@ class CrossroadAdmin(admin.ModelAdmin):
 admin.site.register(Webcam)
 admin.site.register(Crossroad)
 admin.site.register(Trafficlight)
+admin.site.register(Street)
