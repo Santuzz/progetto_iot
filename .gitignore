@@ -11,6 +11,9 @@
 
 arduino-cli_0.35.2_macOS_ARM64/
 
+#pycharm
+.idea/
+
 
 #---------------------- Others Ignore ---------------------------
 

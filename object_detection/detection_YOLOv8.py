@@ -113,6 +113,8 @@ def main():
         if cv2.waitKey(30) == 27:
             break
 
+        print(car_counts)
+
 
 if __name__ == "__main__":
     main()
