@@ -1,30 +1,38 @@
 
-unsigned long timestamp;
+//TODO: controllare se funziona 
+const int baudRate = 9600; // Adjust baud rate if needed
+const byte START_BYTE = 0xFF;
+const byte END_BYTE = 0xFE;
+
+unsigned long lastMillis = 0;  // Millisecond counter for timing
+byte dataByte;                 // Variable to store the data byte
 
 void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
-  timestamp = millis();
-  
+  Serial.begin(baudRate);
 }
 
 void loop() {
-  int dato1;
-  //int dato2;
-  if (millis() - timestamp > 1000){
-    dato1 = analogRead(0);
-    //dato2 = analogRead(1);
-    // pacchetto dati
-    // FF  2  dato1 dato2 FE
-    Serial.write(0xFF);
-    Serial.write(1);
-    
-    Serial.write(map(dato1,0,1023,0,253));
-    //Serial.write(map(dato2,0,1023,0,253));
+  if (millis() - lastMillis >= 1000) { // Check for 1 second interval
+    lastMillis = millis();
 
-    Serial.write(0xFE);
-    
-    timestamp = millis();
+    if (Serial.available() >= 3) { // Check if at least 3 bytes are available
+      if (Serial.read() == START_BYTE) { // Read and check the first byte
+        dataByte = Serial.read();        // Read the data byte
+        if (Serial.read() == END_BYTE) {  // Read and check the end byte
+          // Process the dataByte here (e.g., print it)
+          Serial.print("Received data: ");
+          Serial.println(dataByte);
+        } else {
+          // Handle case where end byte is missing
+          Serial.println("Error: Missing end byte");
+        }
+      } else {
+        // Handle case where start byte is missing
+        Serial.println("Error: Missing start byte");
+        // Clear the serial buffer to prevent overflow
+        Serial.read(10); // Read and discard up to 10 bytes
+      }
+    }
   }
-  
 }
+
