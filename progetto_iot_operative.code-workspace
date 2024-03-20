@@ -4,5 +4,10 @@
 			"path": "."
 		}
 	],
-    "settings": {}
+	"settings": {
+		"editor.wordWrapColumn": 180,
+		"editor.wordWrap": "wordWrapColumn",
+		"debug.console.wordWrap": true,
+		"diffEditor.wordWrap": "off"
+	}
 }
