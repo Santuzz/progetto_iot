@@ -31,6 +31,7 @@ class Street(models.Model):
 class Webcam(models.Model):
     id = models.AutoField(primary_key=True)
     cars_count = models.CharField(max_length=100, default="0,0,0,0")
+    last_send = models.DateTimeField(auto_now_add=False, blank=True, null=True)
     active = models.BooleanField(default=False)
     crossroad = models.ForeignKey(
         Crossroad, on_delete=models.CASCADE, null=True, blank=True)
@@ -50,7 +51,7 @@ class Trafficlight(models.Model):
     ]
     id = models.AutoField(primary_key=True)
     direction = models.CharField(choices=DIRECTION_CHOICES, max_length=100)
-    green_probability = models.FloatField(default=0.5)
+    green_value = models.FloatField(default=0.5)
     crossroad = models.ForeignKey(
         Crossroad, on_delete=models.CASCADE, null=True, blank=True)
     street = models.ForeignKey(

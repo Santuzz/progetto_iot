@@ -25,8 +25,3 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls'))
 
 ]
-
-# inserire qui gli script utili per quando viene avviato il server
-
-# erase_db()
-# init_db()
