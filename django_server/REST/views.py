@@ -11,6 +11,13 @@ import json
 from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
 
+from django.contrib.auth import authenticate
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authtoken.models import Token
+
+import re
+
 """ class WebcamCreateView(generics.CreateAPIView):
     queryset = Webcam.objects.all()
     serializer_class = WebcamSerializer
@@ -82,10 +89,20 @@ class WebcamDestroyView(generics.DestroyAPIView):
         instance.delete()
         return Response({'message': 'Webcam successfully deleted.'}, status=status.HTTP_204_NO_CONTENT)
 
+# TODO utilizza funzione per controllare che cars_count sia una stringa di interi separati da una virgola
+
+
+def check_string(in_string):
+    pattern = r'^\d+(,\d+)*$'
+    if re.match(pattern, in_string):
+        return True
+    else:
+        return False
+
 
 class WebcamAPI(APIView):
-    # authentication
-    # ...
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk=None):
         if pk is not None:
@@ -100,28 +117,31 @@ class WebcamAPI(APIView):
 
     def put(self, request, pk=None):
         request = clean_crossroad(request)
-        obj = get_object_or_404(Webcam, pk=pk)
-        if isinstance(obj, Response):
-            return obj
+        if 'cars_count' in request.data and not check_string(request.data['cars_count']):
+            return Response({"Invalid": f"cars_count must be a string of integers separated by a comma, but instead it's {request.data['cars_count']}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        obj_wc = get_object_or_404(Webcam, pk=pk)
+        if isinstance(obj_wc, Response):
+            return obj_wc
         if 'crossroad_name' in request.data and request.data['crossroad_name'] is None:
-            obj.crossroad = None
+            obj_wc.crossroad = None
         obj = get_object_or_404(Crossroad, name=request.data["crossroad_name"])
         if isinstance(obj, Response):
             return obj
-        serializer = WebcamSerializer(obj, data=request.data)
+        serializer = WebcamSerializer(obj_wc, data=request.data)
         if serializer.is_valid(raise_exception=True):
             instance = serializer.save()
+            # TODO questa due righe sotto servono a qualcosa???
             serializer_data = serializer.data
-            serializer_data["crossroad"] = Webcam.objects.get(
-                id=serializer.data["id"]).crossroad_id
-            print(serializer_data)
+            serializer_data["crossroad"] = obj_wc.crossroad_id
             return Response(serializer_data, status=status.HTTP_202_ACCEPTED)
         return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
         request = clean_crossroad(request)
         # takes data in input and
-        print(request.data)
+        if 'cars_count' in request.data and not check_string(request.data['cars_count']):
+            return Response({"Invalid": f"cars_count must be a string of integers separated by a comma, but instead it's {request.data['cars_count']}"}, status=status.HTTP_400_BAD_REQUEST)
         obj = get_object_or_404(Crossroad, name=request.data["crossroad_name"])
         if isinstance(obj, Response):
             return obj
@@ -131,7 +151,6 @@ class WebcamAPI(APIView):
             serializer_data = serializer.data
             serializer_data["crossroad"] = Webcam.objects.get(
                 id=serializer.data["id"]).crossroad_id
-            print(serializer_data)
             return Response(serializer_data, status=status.HTTP_201_CREATED)
         return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -145,26 +164,88 @@ class WebcamAPI(APIView):
         return Response({'message': 'Webcam successfully deleted.'}, status=status.HTTP_201_CREATED)
 
 
+"""
+
+{
+    "name": "esempio_nome",
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "creation_date": "2024-03-07T12:00:00",
+    "traffic_level": 2.5,
+    "active": True
+}
+"""
+
+
+class CrossroadDestroyView(generics.DestroyAPIView):
+    queryset = Crossroad.objects.all()
+    serializer_class = CrossroadSerializer()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+        return Response({'message': 'Crossroad successfully deleted.'}, status=status.HTTP_204_NO_CONTENT)
+
+
 class CrossroadAPI(APIView):
     # authentication
     # ...
-    def get(self, request):
-        try:
-            name = request.data["name"].lower()
-            instance = Crossroad.objects.get(name=name)
-        except (Crossroad.DoesNotExist, KeyError):
-            return JsonResponse({"Invalid": f"Impossibile trovare l\'incrocio specificato"}, status=status.HTTP_404_NOT_FOUND)
-
-        data = {}
-        if instance:
-            data = CrossroadSerializer(instance).data
-
-        return Response(data, status=200)
+    def get(self, request, name=None):
+        if name is not None:
+            try:
+                # name = request.data["name"].lower()
+                instance = Crossroad.objects.get(name=name.lower())
+            except (Crossroad.DoesNotExist, KeyError):
+                return JsonResponse({"Invalid": f"Impossible to find the specified crossroad"}, status=status.HTTP_404_NOT_FOUND)
+            data = {}
+            if instance:
+                data = CrossroadSerializer(instance).data
+            return Response(data, status=status.HTTP_200_OK)
+        qs = Crossroad.objects.all()
+        data = CrossroadSerializer(qs, many=True).data
+        return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request):
+        for key, value in request.data.items():
+            if type(value) is str:
+                request.data[key] = value.lower()
         serializer = CrossroadSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             instance = serializer.save()
             return Response(serializer.data)
         # togli raise exception da is_valid e definisci il comportamento se la richiesta fatta non è corretta
         # ovvero se non contiene dei valori corretti per creare una nuova instance
+
+    def put(self, request, name=None):
+        obj = get_object_or_404(Crossroad, pk=name.lower())
+        if isinstance(obj, Response):
+            return obj
+        serializer = CrossroadSerializer(obj, data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            instance = serializer.save()
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, name=None):
+        delete_view = CrossroadDestroyView.as_view()
+        # controllo se l'id esiste
+        obj = get_object_or_404(Crossroad, pk=name.lower())
+        if isinstance(obj, Response):
+            return obj
+        response = delete_view(
+            request._request, pk=name.lower())
+        return Response({'message': 'Crossroad successfully deleted.'}, status=status.HTTP_201_CREATED)
+
+
+class CustomAuthToken(APIView):
+    def get(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        username = request.data.get('username')
+        user = authenticate(request, email=email,
+                            password=password, username=username)
+
+        if user is not None:
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)

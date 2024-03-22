@@ -9,21 +9,19 @@ class RestAPI:
         self.user = user
         if user.get('password') is None or (user.get('username') is None and user.get('email') is None):
             raise Exception(
-                'Errore: è necessario specificare password e almeno uno tra email o username')
+                'Errore: Password and at least one of username and email must be provided')
         self.token = self.get_auth_token()
 
     def get_auth_token(self):
         token_url = self.base_url + 'token/'
         response = requests.get(token_url, data={'password': self.user.get(
             'password'), 'email': self.user.get('email'), 'username': self.user.get('username')})
-        print({'password': self.user.get('password'), 'email': self.user.get(
-            'email'), 'username': self.user.get('username')})
         if response.status_code == 200:
             return response.json().get('token')
         else:
             print(f"Failed to get token. Status code: {response.status_code}")
             print(response.json())
-            return None
+            exit(1)
 
     def get_current_date(self):
         return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -38,13 +36,11 @@ class RestAPI:
     def create_instance(self, model_name, data):
         url = f'{model_name.lower()}/'
         response = self.request("POST", url, data)
-        print(response.status_code)
         print(response.json())
 
     def delete_instance(self, model_name, id):
         url = f'{model_name.lower()}/{id}/'
         response = self.request('DELETE', url)
-        print(response.status_code)
         try:
             print(response.json())
         except:
@@ -53,13 +49,11 @@ class RestAPI:
     def update_instance(self, model_name, id, data):
         url = f'{model_name.lower()}/{id}/'
         response = self.request('PUT', url, data)
-        print(response.status_code)
         print(response.json())
 
     def get_instance(self, model_name, id):
         url = f'{model_name.lower()}/{id}/'
         response = self.request('GET', url)
-        print(response.status_code)
         print(response.json())
 
     def send_count(self, crossroad, cars_count):
@@ -71,19 +65,19 @@ class RestAPI:
                 "last_send": last_send,
                 "crossroad_name": crossroad}
         response = self.request('POST', url, data)
-        print(response.status_code)
         print(response.json())
 
 
 def fill_data(args):
     data = {
         'id': None,
-        'cars': None,
+        'cars_count': None,
         'crossroad_name': None,
         'active': None,
-        'crossroad': None,
+        'name': None,
         'latitude': None,
         'longitude': None,
+        'traffic_level': None,
         'street': None,
         'length': None,
         'alert': None,
@@ -92,31 +86,41 @@ def fill_data(args):
         'street_name': None
     }
     if args.model == 'webcam':
+        if args.id is not None:
+            data['id'] = args.id
         if args.crossroad is not None:
             data['crossroad_name'] = args.crossroad
-        if args.active is not None:
-            data['active'] = args.active
+        if args.active.lower() == "true":
+            data['active'] = True
+        elif args.active.lower() == "false":
+            data['active'] = False
+        if args.cars is not None:
+            data['cars_count'] = args.cars
         elif args.crossroad is None:
             print(
-                "Error: provide at least --crossroad or --active for a webcam")
+                "Error: provide at least --crossroad, --id or --active for a webcam")
             exit(1)
 
     elif args.model == 'crossroad':
         if args.name is not None:
-            data['crossroad'] = args.name
+            data['name'] = args.name
         else:
             print("Error: Argument --name must be provided for a crossroad")
             exit(1)
-        if args.active is not None:
-            data['active'] = args.active
+        if args.active.lower() == "true":
+            data['active'] = True
+        elif args.active.lower() == "false":
+            data['active'] = False
         if args.lat is not None:
             data['latitude'] = args.lat
         if args.lon is not None:
             data['longitude'] = args.lon
+        if args.traffic is not None:
+            data['traffic_level'] = args.traffic
 
     elif args.model == 'street':
         if args.name is not None:
-            data['crossroad'] = args.name
+            data['name'] = args.name
         else:
             print("Error: Argument --name must be provided for a street")
             exit(1)
@@ -128,6 +132,8 @@ def fill_data(args):
             data['alert'] = args.alert
 
     elif args.model == 'trafficlight':
+        if args.id is not None:
+            data['id'] = args.id
         if args.crossroad is not None:
             data['crossroad_name'] = args.crossroad
         if args.direction is not None:
@@ -138,7 +144,7 @@ def fill_data(args):
             data['street'] = args.street
         elif args.crossroad is None and args.direction is None and args.green is None:
             print(
-                "Error: provide at least --crossroad, --direction, --green or --street for a trafficlight")
+                "Error: provide at least --crossroad, --direction, --green, --id or --street for a trafficlight")
             exit(1)
     data = {k: v for k, v in data.items() if v is not None}
     return data
@@ -155,7 +161,7 @@ if __name__ == "__main__":
                         help='Email for authentication')
 
     parser.add_argument(
-        '--model', choices=['webcam', 'Crossroad', 'Street', 'Trafficlight'], required=True, help='Select model')
+        '--model', choices=['webcam', 'crossroad', 'street', 'trafficlight'], required=True, help='Select model')
     parser.add_argument(
         '--method', choices=['get', 'create', 'update', 'delete'], required=True, help='Select method')
 
@@ -165,7 +171,7 @@ if __name__ == "__main__":
                         required=False, help='How many cars')
     parser.add_argument('--crossroad', type=str,
                         required=False, help='Select crossroad related')
-    parser.add_argument('--active', type=bool, required=False,
+    parser.add_argument('--active', type=str, required=False,
                         help='Select if active')
 
     # crossroad
@@ -176,6 +182,8 @@ if __name__ == "__main__":
                         help='Select latitude')
     parser.add_argument('--lon', type=float, required=False,
                         help='Select longitude')
+    parser.add_argument('--traffic', type=float, required=False,
+                        help='Select traffic level')
 
     # Street
     # also --name and --crossroad
@@ -205,26 +213,31 @@ if __name__ == "__main__":
         data = fill_data(args)
         api.create_instance(args.model, data)
 
-    if args.method == 'get':
-        if args.model in ['webcam', 'Trafficlight']:
+    elif args.method == 'get':
+        if args.model in ['webcam', 'trafficlight']:
             if args.id is not None:
                 api.get_instance(args.model, args.id)
-        elif args.model in ['Crossroad', 'Street']:
+        elif args.model in ['crossroad', 'street']:
             if args.name is not None:
                 api.get_instance(args.model, args.name)
 
-    if args.method == 'update':
-        fill_data(args)
-        api.update_instance(args.model, data)
+    elif args.method == 'update':
+        data = fill_data(args)
+        if args.model in ['webcam', 'trafficlight']:
+            if args.id is not None:
+                api.update_instance(args.model, args.id, data)
+        elif args.model in ['crossroad', 'street']:
+            if args.name is not None:
+                api.update_instance(args.model, args.name, data)
 
-    if args.method == 'delete':
-        if args.model in ['webcam', 'Trafficlight']:
+    elif args.method == 'delete':
+        if args.model in ['webcam', 'trafficlight']:
             if args.id is not None:
                 api.delete_instance(args.model, args.id)
             else:
                 print("Error: Argument --id must be provided")
                 exit(1)
-        elif args.model in ['Crossroad', 'Street']:
+        elif args.model in ['crossroad', 'street']:
             if args.name is not None:
                 api.delete_instance(args.model, args.name)
             else:

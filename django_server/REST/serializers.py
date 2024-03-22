@@ -37,7 +37,6 @@ class WebcamSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        print("qui")
         crossroad_data = None
         try:
             crossroad_data = validated_data.pop('crossroad_name')
@@ -46,7 +45,6 @@ class WebcamSerializer(serializers.ModelSerializer):
         instance = Webcam.objects.create(**validated_data)
         if crossroad_data is not None:
             instance.crossroad = Crossroad.objects.get(name=crossroad_data)
-            print(instance.crossroad)
         else:
             instance.crossroad = None
         instance.save()
