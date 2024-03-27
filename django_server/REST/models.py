@@ -30,8 +30,8 @@ class Webcam(models.Model):
     cars_count = models.CharField(max_length=100, default="0,0,0,0")
     last_send = models.DateTimeField(auto_now_add=False, blank=True, null=True)
     active = models.BooleanField(default=False)
-    crossroad = models.ForeignKey(
-        Crossroad, on_delete=models.CASCADE, null=True, blank=True, unique=True)
+    crossroad = models.OneToOneField(
+        Crossroad, on_delete=models.CASCADE, null=True, blank=True)
 
     def get_list_count(self):
         return self.cars_count.split(',')

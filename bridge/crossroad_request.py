@@ -1,4 +1,4 @@
-from REST_comunication import RestAPI
+from bridge.REST_communication import RestAPI
 import requests
 import sys
 

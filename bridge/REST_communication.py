@@ -51,8 +51,11 @@ class RestAPI:
         response = self.request('PUT', url, data)
         print(response.json())
 
-    def get_instance(self, model_name, id):
-        url = f'{model_name.lower()}/{id}/'
+    def get_instance(self, model_name, id=None):
+        if id is None:
+            url = f'{model_name.lower()}/'
+        else:
+            url = f'{model_name.lower()}/{id}/'
         response = self.request('GET', url)
         print(response.json())
 
@@ -217,6 +220,8 @@ if __name__ == "__main__":
         if args.model in ['webcam', 'trafficlight']:
             if args.id is not None:
                 api.get_instance(args.model, args.id)
+            else:
+                api.get_instance(args.model)
         elif args.model in ['crossroad', 'street']:
             if args.name is not None:
                 api.get_instance(args.model, args.name)
