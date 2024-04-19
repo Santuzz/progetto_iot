@@ -25,14 +25,12 @@ class Street(models.Model):
     Crossroad = models.ManyToManyField(Crossroad, blank=True)
 
 
-# TODO modificare campo cars_count in modo che contenga un array di N int (numero di macchine per ogni strada)
-# cars_count=ArrayField(models.IntegerField(null=True, blank=True),default=[0, 0, 0, 0], null=True, blank=True)
-    #                                                                      ^__________^ => N
 class Webcam(models.Model):
     id = models.AutoField(primary_key=True)
     cars_count = models.CharField(max_length=100, default="0,0,0,0")
+    last_send = models.DateTimeField(auto_now_add=False, blank=True, null=True)
     active = models.BooleanField(default=False)
-    crossroad = models.ForeignKey(
+    crossroad = models.OneToOneField(
         Crossroad, on_delete=models.CASCADE, null=True, blank=True)
 
     def get_list_count(self):
@@ -50,7 +48,7 @@ class Trafficlight(models.Model):
     ]
     id = models.AutoField(primary_key=True)
     direction = models.CharField(choices=DIRECTION_CHOICES, max_length=100)
-    green_probability = models.FloatField(default=0.5)
+    green_value = models.FloatField(default=0.5)
     crossroad = models.ForeignKey(
         Crossroad, on_delete=models.CASCADE, null=True, blank=True)
     street = models.ForeignKey(
