@@ -3,6 +3,8 @@ import argparse
 import numpy as np
 from ultralytics import YOLO
 import supervision as sv
+from mqtt_client import MQTTClient        
+import copy
 
 width = 1920
 height = 1080
@@ -83,6 +85,14 @@ def main():
             zone=zone, color=sv.Color.RED, thickness=2, text_thickness=4, text_scale=2)
         for zone in zones
     ]
+
+    car_counts_update = [0]*len(zones)
+    client = MQTTClient()          #create new instance of camera
+    client.connect()
+    print('\n')
+    client.subscribe("data_camera")
+
+
     # TODO ottenere il numero di macchine nelle varie zone per poi mandarlo al server.
     # Allo stesso tempo il count deve essere disponibile al bridge dell'arduino con il semaforo
     while True:
@@ -115,6 +125,12 @@ def main():
 
         print(car_counts)
 
+        if(np.array_equal(car_counts, car_counts_update) == False):
+            client.publish("data_camera", car_counts)
+            car_counts_update = copy.deepcopy(car_counts)
 
+    client.disconnect()
+
+        
 if __name__ == "__main__":
     main()
