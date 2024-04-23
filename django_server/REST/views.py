@@ -141,7 +141,7 @@ class WebcamAPI(APIView):
             if isinstance(obj, Response):
                 return obj
             data = WebcamSerializer(obj, many=False).data
-            data["crossroad"] = obj_wc.crossroad_id
+            data["crossroad"] = obj.crossroad_id
             return JsonResponse(data, status=status.HTTP_200_OK)
 
         qs = Webcam.objects.all()
