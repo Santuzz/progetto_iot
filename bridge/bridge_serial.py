@@ -7,6 +7,7 @@ import configparser
 import json
 from datetime import datetime
 import os
+from REST_communication import RestAPI
 # import paho.mqtt.client as mqtt
 
 
@@ -30,6 +31,7 @@ class Bridge():
     def __init__(self):
         self.base_url, self.serial_port = read_config()
         self.setupSerial()
+        self.API = RestAPI(user={'email': 'admin@admin.com', 'password': 'admin', 'username': 'admin'})
 
     def setupSerial(self):
         self.ser = None

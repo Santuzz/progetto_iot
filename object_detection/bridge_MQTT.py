@@ -10,7 +10,7 @@ import time
 serial_port = 'COM4'  # Correct serial port for Arduino
 serial_baudrate = 9600
 
-client = MQTTClient()          #create new instance of camera
+client = MQTTClient()  # create new instance of camera
 client.message()
 client.connect()
 print('\n')
@@ -35,27 +35,32 @@ def send_to_arduino(data):
     except serial.SerialException as e:
         print(f"Error opening serial connection: {e}")
 
-
  # Wait until a new message is received
+ # TODO questo si può togliere, no?
 while client.get_message_payload() is None:
     pass
 
-
+# TODO Queste quattro righe non ci servono, la gestione del tempo che passa è possibile gestirla direttamente nell'if in cui controlliamo se sono passati 5 secondi
+# al posto di datetime.now() che ritorna anche la data, prova a guardare la funzione time.time(), dovrebbe già restituire i secondi
 t = datetime.now()
 previous_time = t - timedelta(seconds=5)
 print("previous_time:", previous_time)
 print('\n')
 
-while(True):
+while (True):
 
     # Wait until a new message is received
+    # TODO rimuovere questo loop perchè altrimenti il bridge rimane bloccato a far nulla
+    # oltre a captare i messaggi sul topic MQTT deve anche comunicare con arduino e con il server
+    # da sostituire con un if visto che siamo già in un ciclo infinito
     while client.get_message_payload() is None:
         pass
 
-    #while client.get_timestamp_message() is None:
+    # while client.get_timestamp_message() is None:
     #    pass
 
     # Get the arrival time of the message from the MQTT client
+    # TODO da rimuovere perchè il tempo lo calcoliamo direttamente con la funzione time.time()
     timestamp_message = client.get_timestamp_message()
     print("Received timestamp_message_bridge:", timestamp_message)
 
@@ -67,10 +72,13 @@ while(True):
     print("time_difference:", time_difference)
 
     # Create a timedelta object to represent 5 seconds
+    # TODO questa variabile è necessaria? non si può scrivere direttamente il numero di millisecondi nell'if sotto per verificare se siano passati?
     five_seconds = timedelta(seconds=5)
     print("five_seconds", five_seconds)
 
     # Compare the time difference with 5 seconds
+    # TODO la condizione potrebbe essere: time.time() - previous_time >= 5
+    # e alla fine dell'if si aggiorna previous_time con time.time()
     if time_difference >= five_seconds:
         # Get the message from the MQTT client
         message_payload = client.get_message_payload()
@@ -88,7 +96,7 @@ while(True):
         print("road_b:", road_b)
         plus_time = 0
 
-        if(road_a > road_b):
+        if (road_a > road_b):
             plus_time = 3 * road_a
         elif (road_a == road_b):
             plus_time = 0
@@ -100,7 +108,7 @@ while(True):
 
         # Chiamata alla funzione per inviare dati ad Arduino
         # send_to_arduino(plus_time)
-    
+
         previous_time = timestamp_message
         print("previous_time:", previous_time)
         print('\n')
