@@ -13,7 +13,7 @@ class WebcamSerializer(serializers.ModelSerializer):
         model = Webcam
         fields = [
             'id',
-            'cars_count',
+            # 'cars_count',
             'active',
             'crossroad_name'
         ]
@@ -35,6 +35,8 @@ class WebcamSerializer(serializers.ModelSerializer):
 
         return instance
 
+
+"""
     def update(self, instance, validated_data):
         try:
             crossroad_data = validated_data.pop('crossroad_name')
@@ -51,6 +53,7 @@ class WebcamSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+        """
 
 
 class TrafficlightSerializer(serializers.ModelSerializer):
@@ -129,8 +132,28 @@ class CrossroadSerializer(serializers.ModelSerializer):
             'longitude',
             'active',
             'creation_date',
-            'traffic_level'
+            'traffic_level',
+            'last_send',
+            'cars_count'
         ]
+    """
+    def update(self, instance, validated_data):
+        try:
+            crossroad_data = validated_data.pop('name')
+
+            if crossroad_data is not None:
+                instance.crossroad = Crossroad.objects.get(name=crossroad_data)
+            else:
+                instance.crossroad = None
+        except KeyError:
+            pass
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        return instance
+"""
 
 
 class StreetSerializer(serializers.ModelSerializer):

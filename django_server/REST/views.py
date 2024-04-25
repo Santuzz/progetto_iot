@@ -79,6 +79,8 @@ def clean_data(request):
         request.data['street_name'] = request.data['street_name'].lower()
     if 'crossroad_name' in request.data and request.data['crossroad_name'] is not None:
         request.data['crossroad_name'] = request.data['crossroad_name'].lower()
+    if 'name' in request.data and request.data['name'] is not None:
+        request.data['name'] = request.data['name'].lower()
     return request
 
 
@@ -123,7 +125,9 @@ class StreetDestroyView(generics.DestroyAPIView):
 
 def check_string(in_string):
     pattern = r'^\d+(,\d+)*$'
-    if re.match(pattern, in_string):
+
+    # if re.match(pattern, in_string):
+    if type(in_string) is str:
         return True
     else:
         return False
@@ -150,8 +154,8 @@ class WebcamAPI(APIView):
 
     def put(self, request, pk=None):
         request = clean_data(request)
-        if 'cars_count' in request.data and not check_string(request.data['cars_count']):
-            return Response({"Invalid": f"cars_count must be a string of integers separated by a comma, but instead it's {request.data['cars_count']}"}, status=status.HTTP_400_BAD_REQUEST)
+        # if 'cars_count' in request.data and not check_string(request.data['cars_count']):
+        #    return Response({"Invalid": f"cars_count must be a string of integers separated by a comma, but instead it's {request.data['cars_count']}"}, status=status.HTTP_400_BAD_REQUEST)
 
         obj_wc = get_object_or_response(Webcam, pk=pk)
         if isinstance(obj_wc, Response):
@@ -184,22 +188,24 @@ class WebcamAPI(APIView):
         return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
+
         request = clean_data(request)
         # takes data in input and
-
+        """
         if 'cars_count' in request.data and not check_string(request.data['cars_count']):
-            return Response({"Invalid": f"cars_count must be a string of integers separated by a comma, but instead it's {request.data['cars_count']}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"Invalid": f"cars_count must be a string of integers separated by a comma, but instead it's {request.data['cars_count']}, a {type(request.data['cars_count'])}!!"}, status=status.HTTP_400_BAD_REQUEST)
         if 'crossroad_name' in request.data:
             crossroad_name = request.data["crossroad_name"]
             crossroad = get_object_or_response(Crossroad,
                                                name=request.data["crossroad_name"])
             if isinstance(crossroad, Response):
                 return crossroad
-            existing_webcam = Webcam.objects.filter(
-                crossroad=crossroad).exists()
+            # existing_webcam = Webcam.objects.filter(
+            #    crossroad=crossroad).exists()
 
-            if existing_webcam:
-                return Response({"Invalid": f"A webcam already exists for crossroad '{crossroad_name}'"}, status=status.HTTP_400_BAD_REQUEST)
+            # if existing_webcam:
+            #    return Response({"Invalid": f"A webcam already exists for crossroad '{crossroad_name}'"}, status=status.HTTP_400_BAD_REQUEST)
+        """
 
         serializer = WebcamSerializer(data=request.data)
 
@@ -330,9 +336,11 @@ class CrossroadAPI(APIView):
 
     def get(self, request, name=None):
         if name is not None:
+
             try:
                 instance = Crossroad.objects.get(name=name.lower())
             except (Crossroad.DoesNotExist, KeyError):
+                print("qui")
                 return Response({"Invalid": f"Impossible to find the specified crossroad"}, status=status.HTTP_404_NOT_FOUND)
             data = {}
             if instance:
@@ -343,10 +351,33 @@ class CrossroadAPI(APIView):
         return JsonResponse(data, status=status.HTTP_200_OK)
 
     def post(self, request):
+        request = clean_data(request)
+        # takes data in input and
+
+        if 'cars_count' in request.data and not check_string(request.data['cars_count']):
+            return Response({"Invalid": f"cars_count must be a string of integers separated by a comma, but instead it's {request.data['cars_count']}, a {type(request.data['cars_count'])}!!"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # existing_webcam = Webcam.objects.filter(
+            #    crossroad=crossroad).exists()
+
+            # if existing_webcam:
+            #    return Response({"Invalid": f"A webcam already exists for crossroad '{crossroad_name}'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = CrossroadSerializer(data=request.data)
+
+        if serializer.is_valid(raise_exception=True):
+            instance = serializer.save()
+            serializer_data = serializer.data
+            serializer_data["crossroad"] = Crossroad.objects.get(
+                name=serializer.data["name"]).name
+            return JsonResponse(serializer_data, status=status.HTTP_201_CREATED)
+
+        return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
+
         for key, value in request.data.items():
             if type(value) is str:
                 request.data[key] = value.lower()
-        serializer = CrossroadSerializer(data=request.data)
+
         if serializer.is_valid(raise_exception=True):
             instance = serializer.save()
             return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)

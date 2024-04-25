@@ -28,16 +28,17 @@ def read_config():
 
 class Bridge():
 
-    def __init__(self, crossroad):
+    def __init__(self):
         self.base_url, self.serial_port = read_config()
-        self.setupSerial()
+        # self.setupSerial()
+        self.crossroad = "viaBella"
         self.data = {
-            "name": "via bella",
+            "name": self.crossroad,
             "latitude": 46.321,
             "longitude": 11.123,
         }
-        self.crossroad = self.data["name"]
-        self.cars_count = [0, 0, 0, 0]
+
+        self.cars_count = [0, 1, 0, 0]
 
     def setupSerial(self):
         self.ser = None
@@ -52,16 +53,17 @@ class Bridge():
         print("Connected with result code " + str(rc))
 
     def setupServer(self, rest):
+        # get existed crossroad
+        return rest.get_instance("crossroad", self.crossroad)
+        # create crossroad
         return rest.create_instance("crossroad", self.data)
-
-    def send_count(self):
-        self.rest.send_count(self.crossroad, self.cars_count)
 
     def loop(self):
         # infinite loop for serial managing
         rest = RestAPI(user={'email': 'admin@admin.com', 'password': 'admin', 'username': 'admin'})
-        crossroad = self.setupServer(rest)
+        self.setupServer(rest)
         current_time = time.time()
+        current_cars = self.cars_count
         while (True):
             # TODO Controllare se manda correttamente i dati
             # Your data to send
@@ -71,7 +73,7 @@ class Bridge():
             # Send data with start and end bytes
             data_bytes = [0xFF, data_to_send, 0xFE]  # List of bytes to send
             try:
-                self.ser.write(data_bytes)
+                # self.ser.write(data_bytes)
                 print(f"Sent data: {data_bytes}")
             except serial.SerialException as e:
                 print(f"Error sending data: {e}")
@@ -82,7 +84,14 @@ class Bridge():
             # TODO parte per comunicare con il server attraverso API
 
             if time.time()-current_time >= 5:
-                self.send_count()
+                if current_cars != self.cars_count:
+                    rest.send_count(self.crossroad, self.cars_count)
+                    current_cars = self.cars_count
+                    self.cars_count = [1, 0, 0, 0]
+
+                # codice di test
+                else:
+                    self.cars_count = [1, 0, 0]
 
                 current_time = time.time()
 

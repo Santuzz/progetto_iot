@@ -15,19 +15,17 @@ django.setup()
 
 def init_db():
     print("Creazione db")
-    # Creare istanze di MasterIgrometri
+    # Creare istanze
     crossroad_1 = Crossroad(
-        name="incrocio", latitude="10.10", longitude="20.20")
+        name="incrocio_4", latitude="10.10", longitude="20.20", cars_count="0,1,0,0")
     crossroad_1.save()
     webcam = Webcam(crossroad=crossroad_1)
     webcam.save()
 
-    # Creare 30 istanze di Igrometro collegate ai MasterIgrometri con ultima misurazione
-
     for i in range(4):
         Trafficlight(
             direction="A",
-            green_probability=0.5,
+            green_value=0.5,
             crossroad=crossroad_1
         ).save()
 
@@ -41,5 +39,5 @@ def erase_db():
 
 if __name__ == 'main':
     print("qua")
-    erase_db()
-    init_db()
+    # erase_db()
+    # init_db()

@@ -9,6 +9,8 @@ class Crossroad(models.Model):
     name = models.CharField(max_length=100, primary_key=True)
     latitude = models.FloatField(default=0)
     longitude = models.FloatField(default=0)
+    cars_count = models.CharField(max_length=100, default="0,0,0,0")
+    last_send = models.DateTimeField(auto_now_add=False, blank=True, null=True)
     creation_date = models.DateTimeField(
         auto_now_add=True, blank=True, null=True)
     traffic_level = models.FloatField(default=0)
@@ -16,6 +18,9 @@ class Crossroad(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
+    def get_list_count(self):
+        return self.cars_count.split(',')
 
 
 class Street(models.Model):
@@ -27,14 +32,9 @@ class Street(models.Model):
 
 class Webcam(models.Model):
     id = models.AutoField(primary_key=True)
-    cars_count = models.CharField(max_length=100, default="0,0,0,0")
-    last_send = models.DateTimeField(auto_now_add=False, blank=True, null=True)
     active = models.BooleanField(default=False)
     crossroad = models.OneToOneField(
         Crossroad, on_delete=models.CASCADE, null=True, blank=True)
-
-    def get_list_count(self):
-        return self.cars_count.split(',')
 
 
 class Trafficlight(models.Model):

@@ -60,14 +60,15 @@ class RestAPI:
         print(response.json())
 
     def send_count(self, crossroad, cars_count):
-        url = f'webcam/'
+        url = f'crossroad/'
         # convert from list to string
         cars_count = ", ".join(str(num) for num in cars_count)
         last_send = self.get_current_date()
         data = {"cars_count": cars_count,
                 "last_send": last_send,
-                "crossroad_name": crossroad}
-        response = self.request('POST', url, data)
+                "name": crossroad}
+        print(data)
+        response = self.request('PUT', url+crossroad+"/", data)
         print(response.json())
 
 
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--model', choices=['webcam', 'crossroad', 'street', 'trafficlight'], required=True, help='Select model')
     parser.add_argument(
-        '--method', choices=['get', 'create', 'update', 'delete'], required=True, help='Select method')
+        '--method', choices=['get', 'create', 'update', 'delete'], required=False, help='Select method')
 
     # webcam
     parser.add_argument('--id', type=int, required=False, help='Select id')
