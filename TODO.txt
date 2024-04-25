@@ -1,6 +1,6 @@
 Davide:
     - comunicazione bridge-server:
-        - Creare utente django a cui va associata una webcam in modo che possa aggiornare il cars_count
+        - Creare utente django a cui va associata una crossroad in modo che possa aggiornare il cars_count
         - Creare un istanza di RestAPI su bridge_serial.py da usare per far comunicare il bridge con il server
         - 
 

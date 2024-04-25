@@ -28,10 +28,16 @@ def read_config():
 
 class Bridge():
 
-    def __init__(self):
+    def __init__(self, crossroad):
         self.base_url, self.serial_port = read_config()
         self.setupSerial()
-        self.API = RestAPI(user={'email': 'admin@admin.com', 'password': 'admin', 'username': 'admin'})
+        self.data = {
+            "name": "via bella",
+            "latitude": 46.321,
+            "longitude": 11.123,
+        }
+        self.crossroad = self.data["name"]
+        self.cars_count = [0, 0, 0, 0]
 
     def setupSerial(self):
         self.ser = None
@@ -45,8 +51,17 @@ class Bridge():
     def on_connect(self, client, userdata, flags, rc):
         print("Connected with result code " + str(rc))
 
+    def setupServer(self, rest):
+        return rest.create_instance("crossroad", self.data)
+
+    def send_count(self):
+        self.rest.send_count(self.crossroad, self.cars_count)
+
     def loop(self):
         # infinite loop for serial managing
+        rest = RestAPI(user={'email': 'admin@admin.com', 'password': 'admin', 'username': 'admin'})
+        crossroad = self.setupServer(rest)
+        current_time = time.time()
         while (True):
             # TODO Controllare se manda correttamente i dati
             # Your data to send
@@ -62,8 +77,14 @@ class Bridge():
                 print(f"Error sending data: {e}")
 
             # TODO parte per leggere da MQTT
+            cars_count = 0
 
             # TODO parte per comunicare con il server attraverso API
+
+            if time.time()-current_time >= 5:
+                self.send_count()
+
+                current_time = time.time()
 
             # Wait for a bit before sending again (adjust as needed)
             time.sleep(1)  # Wait 1 second before sending again

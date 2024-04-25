@@ -40,8 +40,7 @@ def send_to_arduino(data):
 while client.get_message_payload() is None:
     pass
 
-# TODO Queste quattro righe non ci servono, la gestione del tempo che passa è possibile gestirla direttamente nell'if in cui controlliamo se sono passati 5 secondi
-# al posto di datetime.now() che ritorna anche la data, prova a guardare la funzione time.time(), dovrebbe già restituire i secondi
+# TODO al posto di datetime.now() che ritorna anche la data, si potrebbe optare per time.time()che restituisce direttamenti i secondi
 t = datetime.now()
 previous_time = t - timedelta(seconds=5)
 print("previous_time:", previous_time)
@@ -72,7 +71,7 @@ while (True):
     print("time_difference:", time_difference)
 
     # Create a timedelta object to represent 5 seconds
-    # TODO questa variabile è necessaria? non si può scrivere direttamente il numero di millisecondi nell'if sotto per verificare se siano passati?
+    # TODO se non si usa datetime questa variabile risulta inutile
     five_seconds = timedelta(seconds=5)
     print("five_seconds", five_seconds)
 
