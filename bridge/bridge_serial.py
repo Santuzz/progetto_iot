@@ -55,48 +55,48 @@ class Bridge():
     def setupServer(self, rest):
         # get existed crossroad
         return rest.get_instance("crossroad", self.crossroad)
-        # create crossroad
+        # create crossroad (usare solo per test)
         return rest.create_instance("crossroad", self.data)
 
     def loop(self):
         # infinite loop for serial managing
         rest = RestAPI(user={'email': 'admin@admin.com', 'password': 'admin', 'username': 'admin'})
-        self.setupServer(rest)
+        valid = self.setupServer(rest).json()
+        if 'Invalid' in valid:
+            print(valid)
+            exit(1)
+
         current_time = time.time()
         current_cars = self.cars_count
-        while (True):
-            # TODO Controllare se manda correttamente i dati
-            # Your data to send
-            # Replace with your actual data (integer in this example)
-            data_to_send = 42
+        try:
+            while (True):
+                # TODO Comunicazione seriale con Arduino
+                arduino_data = 42
 
-            # Send data with start and end bytes
-            data_bytes = [0xFF, data_to_send, 0xFE]  # List of bytes to send
-            try:
-                # self.ser.write(data_bytes)
-                print(f"Sent data: {data_bytes}")
-            except serial.SerialException as e:
-                print(f"Error sending data: {e}")
+                # Add start and end bytes for data to arduino
+                arduino_bytes = [0xFF, arduino_data, 0xFE]
+                try:
+                    # self.ser.write(data_bytes)
+                    print(f"Sent data: {arduino_bytes}")
+                except serial.SerialException as e:
+                    print(f"Error sending data: {e}")
 
-            # TODO parte per leggere da MQTT
-            cars_count = 0
+                # TODO comunicazione MQTT con object_detection/detection_YOLOv8.py
+                cars_count = 0
 
-            # TODO parte per comunicare con il server attraverso API
+                # Comnicazione server
 
-            if time.time()-current_time >= 5:
-                if current_cars != self.cars_count:
-                    rest.send_count(self.crossroad, self.cars_count)
-                    current_cars = self.cars_count
-                    self.cars_count = [1, 0, 0, 0]
+                if time.time()-current_time >= 5:
+                    if current_cars != self.cars_count:
+                        rest.send_count(self.crossroad, self.cars_count)
+                        current_cars = self.cars_count
 
-                # codice di test
-                else:
-                    self.cars_count = [1, 0, 0]
+                    current_time = time.time()
 
-                current_time = time.time()
-
-            # Wait for a bit before sending again (adjust as needed)
-            time.sleep(1)  # Wait 1 second before sending again
+                time.sleep(1)
+        except (KeyboardInterrupt):
+            print("Loop interrupted")
+            exit(1)
 
 
 if __name__ == '__main__':

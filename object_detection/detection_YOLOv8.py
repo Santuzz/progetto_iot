@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 from ultralytics import YOLO
 import supervision as sv
-from mqtt_client import MQTTClient        
+from mqtt_client import MQTTClient
 import copy
 
 width = 1920
@@ -87,50 +87,53 @@ def main():
     ]
 
     car_counts_update = [0]*len(zones)
-    client = MQTTClient()          #create new instance of camera
+    client = MQTTClient()  # create new instance of camera
     client.connect()
     print('\n')
     client.subscribe("data_camera")
 
-
     # TODO ottenere il numero di macchine nelle varie zone per poi mandarlo al server.
     # Allo stesso tempo il count deve essere disponibile al bridge dell'arduino con il semaforo
-    while True:
-        ret, frame = capture.read()
+    try:
+        while True:
+            ret, frame = capture.read()
 
-        result = model(frame)[0]
-        detections = sv.Detections.from_ultralytics(result)
-        # riconoscimento delle sole auto (detections.class_id==2)
-        detections = detections[detections.class_id == 2]
+            result = model(frame)[0]
+            detections = sv.Detections.from_ultralytics(result)
+            # riconoscimento delle sole auto (detections.class_id==2)
+            detections = detections[detections.class_id == 2]
 
-        labels = [
-            f"{model.model.names[class_id]} {confidence:0.2f}"
-            for _, _, confidence, class_id, _, _
-            in detections
-        ]
+            labels = [
+                f"{model.model.names[class_id]} {confidence:0.2f}"
+                for _, _, confidence, class_id, _, _
+                in detections
+            ]
 
-        frame = box_annotator.annotate(
-            scene=frame, detections=detections, labels=labels)
-        car_counts = [0]*len(zones)
-        for i, zone in enumerate(zones):
+            frame = box_annotator.annotate(
+                scene=frame, detections=detections, labels=labels)
+            car_counts = [0]*len(zones)
+            for i, zone in enumerate(zones):
 
-            car_counts[i] = zone.current_count
-            zone.trigger(detections=detections)
-            frame = zone_annotators[i].annotate(scene=frame)
+                car_counts[i] = zone.current_count
+                zone.trigger(detections=detections)
+                frame = zone_annotators[i].annotate(scene=frame)
 
-        cv2.imshow("yolov8", frame)
+            cv2.imshow("yolov8", frame)
 
-        if cv2.waitKey(30) == 27:
-            break
+            if cv2.waitKey(30) == 27:
+                break
 
-        print(car_counts)
+            print(car_counts)
 
-        if(np.array_equal(car_counts, car_counts_update) == False):
-            client.publish("data_camera", car_counts)
-            car_counts_update = copy.deepcopy(car_counts)
+            if (np.array_equal(car_counts, car_counts_update) == False):
+                client.publish("data_camera", car_counts)
+                car_counts_update = copy.deepcopy(car_counts)
 
-    client.disconnect()
+    except (KeyboardInterrupt):
+        print("Loop interrupted")
+        client.disconnect()
+        exit(1)
 
-        
+
 if __name__ == "__main__":
     main()

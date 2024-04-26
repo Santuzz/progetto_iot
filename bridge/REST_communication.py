@@ -37,6 +37,7 @@ class RestAPI:
         url = f'{model_name.lower()}/'
         response = self.request("POST", url, data)
         print(response.json())
+        return response
 
     def delete_instance(self, model_name, id):
         url = f'{model_name.lower()}/{id}/'
@@ -45,11 +46,13 @@ class RestAPI:
             print(response.json())
         except:
             pass
+        return response
 
     def update_instance(self, model_name, id, data):
         url = f'{model_name.lower()}/{id}/'
         response = self.request('PUT', url, data)
         print(response.json())
+        return response
 
     def get_instance(self, model_name, id=None):
         if id is None:
@@ -57,7 +60,7 @@ class RestAPI:
         else:
             url = f'{model_name.lower()}/{id}/'
         response = self.request('GET', url)
-        print(response.json())
+        return response
 
     def send_count(self, crossroad, cars_count):
         url = f'crossroad/'
@@ -98,8 +101,7 @@ def fill_data(args):
             data['active'] = True
         elif args.active.lower() == "false":
             data['active'] = False
-        if args.cars is not None:
-            data['cars_count'] = args.cars
+
         elif args.crossroad is None:
             print(
                 "Error: provide at least --crossroad, --id or --active for a webcam")
@@ -121,6 +123,8 @@ def fill_data(args):
             data['longitude'] = args.lon
         if args.traffic is not None:
             data['traffic_level'] = args.traffic
+        if args.cars is not None:
+            data['cars_count'] = args.cars
 
     elif args.model == 'street':
         if args.name is not None:
@@ -171,8 +175,7 @@ if __name__ == "__main__":
 
     # webcam
     parser.add_argument('--id', type=int, required=False, help='Select id')
-    parser.add_argument('--cars', type=str,
-                        required=False, help='How many cars')
+
     parser.add_argument('--crossroad', type=str,
                         required=False, help='Select crossroad related')
     parser.add_argument('--active', type=str, required=False,
@@ -188,6 +191,8 @@ if __name__ == "__main__":
                         help='Select longitude')
     parser.add_argument('--traffic', type=float, required=False,
                         help='Select traffic level')
+    parser.add_argument('--cars', type=str,
+                        required=False, help='How many cars')
 
     # Street
     # also --name and --crossroad
