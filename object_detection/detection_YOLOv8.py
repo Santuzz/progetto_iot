@@ -130,6 +130,7 @@ def main():
                 car_counts_update = copy.deepcopy(car_counts)
 
     except (KeyboardInterrupt):
+        print()
         print("Loop interrupted")
         client.disconnect()
         exit(1)

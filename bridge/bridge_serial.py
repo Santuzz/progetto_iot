@@ -95,6 +95,7 @@ class Bridge():
 
                 time.sleep(1)
         except (KeyboardInterrupt):
+            print()
             print("Loop interrupted")
             exit(1)
 
