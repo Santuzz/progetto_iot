@@ -110,5 +110,8 @@ void processPlusTime() {
         if (intervalGreen_new < 3000) {
             intervalGreen_new = 3000;
         }
+    } else {
+        intervalGreen_new = intervalGreen;
+        intervalRed_new = intervalRed;
     }
 }
