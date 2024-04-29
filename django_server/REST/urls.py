@@ -28,7 +28,5 @@ urlpatterns = [
     path('token/', CustomAuthToken.as_view(), name='token-api'),
 ]
 
-# inserire qui gli script utili per quando viene avviato il server
-
 # erase_db()
 # init_db()

@@ -340,7 +340,6 @@ class CrossroadAPI(APIView):
             try:
                 instance = Crossroad.objects.get(name=name.lower())
             except (Crossroad.DoesNotExist, KeyError):
-                print("qui")
                 return Response({"Invalid": f"Impossible to find the specified crossroad"}, status=status.HTTP_404_NOT_FOUND)
             data = {}
             if instance:
@@ -395,10 +394,15 @@ class CrossroadAPI(APIView):
             if type(value) is str:
                 request.data[key] = value.lower()
         serializer = CrossroadSerializer(obj, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            instance = serializer.save()
-            return JsonResponse(serializer.data, status=status.HTTP_202_ACCEPTED)
-        return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid(raise_exception=True):
+            return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
+        instance = serializer.save()
+        # TODO Elaborazione vagtore di auto
+        # chiamo tutti gli incroci collegati (ovvero quelli associati alle street associate all'incrocio)
+        neighbor_streets = Street.objects.filter(crossroad=obj)
+        neighbor_crossroads = Crossroad.objects.filter(street__in=neighbor_streets).exclude(name=obj.name).distinct()
+        print(neighbor_crossroads)
+        return JsonResponse(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     def delete(self, request, name=None):
         delete_view = CrossroadDestroyView.as_view()

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "REST",
+    "mqtt_integration",
     'rest_framework',
     'rest_framework.authtoken',
 ]
@@ -107,11 +109,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "Europe/Rome"
-
 USE_I18N = True
-
 USE_TZ = True
 
 
@@ -119,9 +118,23 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# MQTT configuration
+MQTT_BROKER_HOST = "172.0.0.2"
+MQTT_BROKER_PORT = 1883  # Cambialo se necessario
+MQTT_BROKER_KEEPALIVE = 60  # Cambialo se necessario
+MQTT_QOS = 2
+MQTT_USERNAME = ''  # get_secret('MQTT_USERNAME')
+MQTT_PASSWORD = ''  # get_secret('MQTT_PASSWORD')
+MQTT_CLIENT_ID = 'django_mqtt_client'
+MQTT_TOPIC_BRIDGE = '/trafficlight_value/'

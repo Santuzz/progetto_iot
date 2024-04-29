@@ -113,10 +113,11 @@ def fill_data(args):
         else:
             print("Error: Argument --name must be provided for a crossroad")
             exit(1)
-        if args.active.lower() == "true":
-            data['active'] = True
-        elif args.active.lower() == "false":
-            data['active'] = False
+        if args.active:
+            if args.active.lower() == "true":
+                data['active'] = True
+            elif args.active.lower() == "false":
+                data['active'] = False
         if args.lat is not None:
             data['latitude'] = args.lat
         if args.lon is not None:
@@ -171,7 +172,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--model', choices=['webcam', 'crossroad', 'street', 'trafficlight'], required=True, help='Select model')
     parser.add_argument(
-        '--method', choices=['get', 'create', 'update', 'delete'], required=False, help='Select method')
+        '--method', choices=['GET', 'POST', 'PUT', 'DELETE'], required=False, help='Select method')
 
     # webcam
     parser.add_argument('--id', type=int, required=False, help='Select id')
@@ -218,11 +219,11 @@ if __name__ == "__main__":
     api = RestAPI(
         user={'email': email, 'password': password, 'username': username})
 
-    if args.method == 'create':
+    if args.method == 'POST':
         data = fill_data(args)
         api.create_instance(args.model, data)
 
-    elif args.method == 'get':
+    elif args.method == 'GET':
         if args.model in ['webcam', 'trafficlight']:
             if args.id is not None:
                 api.get_instance(args.model, args.id)
@@ -232,7 +233,7 @@ if __name__ == "__main__":
             if args.name is not None:
                 api.get_instance(args.model, args.name)
 
-    elif args.method == 'update':
+    elif args.method == 'PUT':
         data = fill_data(args)
         if args.model in ['webcam', 'trafficlight']:
             if args.id is not None:
@@ -241,7 +242,7 @@ if __name__ == "__main__":
             if args.name is not None:
                 api.update_instance(args.model, args.name, data)
 
-    elif args.method == 'delete':
+    elif args.method == 'DELETE':
         if args.model in ['webcam', 'trafficlight']:
             if args.id is not None:
                 api.delete_instance(args.model, args.id)

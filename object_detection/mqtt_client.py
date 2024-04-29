@@ -1,6 +1,7 @@
-import paho.mqtt.client as mqtt     #import the client1
+import paho.mqtt.client as mqtt  # import the client1
 import json
 from datetime import datetime
+
 
 class MQTTClient:
     def __init__(self, broker_address="localhost", broker_port=1883):
@@ -10,8 +11,8 @@ class MQTTClient:
         self.client.on_disconnect = self.on_disconnect
         self.broker_address = broker_address
         self.broker_port = broker_port
-        self.message_payload = None     #attribute to store the message payload
-        self.timestamp_message = None     #attribute to store the timestamp of the message
+        self.message_payload = None  # attribute to store the message payload
+        self.timestamp_message = None  # attribute to store the timestamp of the message
 
     def on_connect(self, client, userdata, flags, rc, *args, **kwargs):
         if rc == 0:
@@ -24,8 +25,8 @@ class MQTTClient:
 
     def on_message(self, client, userdata, message):
         print("Received message:", str(message.payload.decode("utf-8")))
-        self.message_payload = json.loads(message.payload)      #save the message in the payload
-        #print("msg_payload:", self.message_payload)
+        self.message_payload = json.loads(message.payload)  # save the message in the payload
+        # print("msg_payload:", self.message_payload)
         self.timestamp_message = datetime.now()
         print("Timestamp message:", self.timestamp_message)
 
@@ -53,12 +54,13 @@ class MQTTClient:
         self.client.on_message = self.on_message
 
     def get_message_payload(self):
-        #print("msg_payload:", self.message_payload)
+        # print("msg_payload:", self.message_payload)
         return self.message_payload
-    
+
     def message_None(self):
         self.message_payload = None
 
+    # TODO dovrebbe essere inutile
     def get_timestamp_message(self):
         print("timestamp_message:", self.timestamp_message)
         return self.timestamp_message

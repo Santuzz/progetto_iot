@@ -31,7 +31,7 @@ class Bridge():
     def __init__(self):
         self.base_url, self.serial_port = read_config()
         # self.setupSerial()
-        self.crossroad = "viaBella"
+        self.crossroad = "via Bella"
         self.data = {
             "name": self.crossroad,
             "latitude": 46.321,

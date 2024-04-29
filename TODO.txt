@@ -6,3 +6,9 @@ Davide:
 
 Erika:
     - Creare lo script di arduino che riceva i dati dal bridge per gestire il semaforo
+
+Ppt:
+ - 3 parti:
+    - presentare come se il prof fosse un cliente che vuole sapere come funziona il sistema (parte astratta), cosa fa, a cosa serve il progetto
+    - entrare nel dettaglio: tecnologie usate, protocolli
+    - mostrare parti di codice, il funzionamento concreto del progetto, video in cui si mostra il funzionamento del progetto

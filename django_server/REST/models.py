@@ -27,7 +27,7 @@ class Street(models.Model):
     name = models.CharField(max_length=100, primary_key=True)
     length = models.IntegerField(default=100)
     alert = models.BooleanField(default=False)
-    Crossroad = models.ManyToManyField(Crossroad, blank=True)
+    crossroad = models.ManyToManyField(Crossroad, blank=True)
 
 
 class Webcam(models.Model):
