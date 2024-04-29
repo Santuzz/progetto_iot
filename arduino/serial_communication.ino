@@ -3,9 +3,12 @@ const int yellowPin = 3; // Connect the yellow LED to pin 3
 const int greenPin = 4;  // Connect the green LED to pin 4
 
 unsigned long previousMillis = 0;
-long intervalRed = 5000;    // Time for red (5 seconds)
-long intervalGreen = 5000;  // Time for green (5 seconds)
-const long intervalYellow = 1000; // Time for yellow (1 second)
+long intervalRed = 8000;    // Time for red (5 seconds)
+long intervalGreen = 8000;  // Time for green (5 seconds)
+const long intervalYellow = 3000; // Time for yellow (1 second)
+
+long intervalRed_new = 0;
+long intervalGreen_new = 0;
 
 int currentState = 0; // 0 = red, 1 = green, 2 = yellow
 
@@ -25,8 +28,11 @@ void setup() {
 }
 
 void loop() {
+    intervalRed_new = 0;
+    intervalGreen_new = 0;
+
     // Check if 1 second has elapsed since the last iteration
-    if (millis() - lastMillis >= 1000) {
+    /*if (millis() - lastMillis >= 1000) {
         lastMillis = millis();
 
         // Check if there are data available on the serial port
@@ -47,7 +53,7 @@ void loop() {
                 Serial.read(10); // Read and discard up to 10 bytes
             }
         }
-    }
+    }*/
 
     // Traffic light management based on the current state
     unsigned long currentMillis = millis();
@@ -57,9 +63,9 @@ void loop() {
             digitalWrite(yellowPin, LOW);
             digitalWrite(greenPin, LOW);
             
-            if (currentMillis - previousMillis >= intervalRed) {
+            if (currentMillis - previousMillis >= intervalRed_new) {
                 previousMillis = currentMillis;
-                currentState = 2; // Move to yellow
+                currentState = 1; // Move to green
             }
             break;
 
@@ -68,9 +74,9 @@ void loop() {
             digitalWrite(yellowPin, LOW);
             digitalWrite(greenPin, HIGH);
 
-            if (currentMillis - previousMillis >= intervalGreen) {
+            if (currentMillis - previousMillis >= intervalGreen_new) {
                 previousMillis = currentMillis;
-                currentState = 0; // Move to red
+                currentState = 2; // Move to yellow
             }
             break;
 
@@ -81,7 +87,7 @@ void loop() {
 
             if (currentMillis - previousMillis >= intervalYellow) {
                 previousMillis = currentMillis;
-                currentState = 1; // Move to green
+                currentState = 0; // Move to red
             }
             break;
     }
@@ -91,12 +97,18 @@ void processPlusTime() {
     // Process the additional time received from serial
     // Update the green interval time based on the value of plus_time
     if (plus_time > 0) {
-        intervalGreen += plus_time * 1000; // Convert seconds to milliseconds and add to green interval
+        intervalRed_new = intervalRed - ((plus_time * 1000)/2);
+        intervalGreen_new = intervalGreen + (plus_time * 1000); // Convert seconds to milliseconds and add to green interval
+        // Ensure that the red interval is not less than 3000 milliseconds (3 second)
+        if (intervalRed_new < 3000) {
+            intervalRed_new = 3000;
+        }
     } else if (plus_time < 0) {
-        intervalGreen -= (-plus_time) * 1000; // Convert seconds to milliseconds and subtract from green interval
-        // Ensure that the green interval is not less than 1000 milliseconds (1 second)
-        if (intervalGreen < 1000) {
-            intervalGreen = 1000;
+        intervalGreen_new = intervalGreen - ((-plus_time) * 1000); // Convert seconds to milliseconds and subtract from green interval
+        intervalRed_new = intervalRed + ((plus_time * 1000)/2);
+        // Ensure that the green interval is not less than 3000 milliseconds (3 second)
+        if (intervalGreen_new < 3000) {
+            intervalGreen_new = 3000;
         }
     }
 }
