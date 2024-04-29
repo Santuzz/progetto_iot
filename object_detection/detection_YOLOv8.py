@@ -15,32 +15,61 @@ shift_center = 300 // 2
 
 # Definizione dei vertici per i quattro trapezi
 # TODO ridefinire le zone in base alla posizione della cam
-ZONE_POLYGON_UP = np.array([
-    [0, 0],
-    [width, 0],
-    [center_width+shift_center, center_height-shift_center],
+
+
+ZONE_POLYGON_UPR = np.array([
+    [center_width-shift_center, 0],
+    [width//2, 0],
+    [width//2, center_height-shift_center],
     [center_width-shift_center, center_height-shift_center]
 ])
+ZONE_POLYGON_UPL = np.array([
+    [width//2, 0],
+    [center_width+shift_center, 0],
+    [center_width+shift_center, center_height-shift_center],
+    [width//2, center_height-shift_center]
+])
 
-ZONE_POLYGON_RT = np.array([
-    [width, 0],
-    [width, height],
-    [center_width+shift_center, center_height+shift_center],
+ZONE_POLYGON_RTU = np.array([
+    [width, center_height-shift_center],
+    [width, height//2],
+    [center_width+shift_center, height//2],
     [center_width+shift_center, center_height-shift_center]
 ])
 
-ZONE_POLYGON_DN = np.array([
-    [width, height],
-    [0, height],
-    [center_width-shift_center, center_height+shift_center],
+ZONE_POLYGON_RTD = np.array([
+    [width, height//2],
+    [width, center_height+shift_center],
+    [center_width+shift_center, center_height+shift_center],
+    [center_width+shift_center, height//2]
+])
+
+ZONE_POLYGON_DNR = np.array([
+    [center_width+shift_center, height],
+    [width//2, height],
+    [width//2, center_height+shift_center],
     [center_width+shift_center, center_height+shift_center]
 ])
 
-ZONE_POLYGON_LT = np.array([
-    [0, height],
-    [0, 0],
-    [center_width-shift_center, center_height-shift_center],
+ZONE_POLYGON_DNL = np.array([
+    [width//2, height],
+    [center_width-shift_center, height],
+    [center_width-shift_center, center_height+shift_center],
+    [width//2, center_height+shift_center]
+])
+
+ZONE_POLYGON_LTU = np.array([
+    [0, center_height+shift_center],
+    [0, height//2],
+    [center_width-shift_center, height//2],
     [center_width-shift_center, center_height+shift_center]
+])
+
+ZONE_POLYGON_LTD = np.array([
+    [0, height//2],
+    [0, center_height-shift_center],
+    [center_width-shift_center, center_height-shift_center],
+    [center_width-shift_center, height//2]
 ])
 
 
@@ -51,6 +80,10 @@ def parse_arguments() -> argparse.Namespace:
     )
     args = parser.parse_args()
     return args
+
+# TODO creare altre quattro zone per identificare quante auto ci sono in ogni strada dopo che hanno attraversato l'incrocio,
+#       questo dato ci serve da mandare al server per fare in modo che possa avvisare l'incrocio adiacente nel caso in cui le auto che vadano in una via siano elevate
+#   Le zone in questioni dovranno storare il dato delle auto passate per un determinato lasso di tempo, in questo modo si capisce quante sono le auto complessive che hanno preso una determinata strada in un certo lasso di tempo
 
 
 def main():
@@ -70,14 +103,23 @@ def main():
     )
 
     zones = [
-        sv.PolygonZone(polygon=ZONE_POLYGON_UP,
+
+        sv.PolygonZone(polygon=ZONE_POLYGON_UPR,
                        frame_resolution_wh=tuple(args.webcam_resolution)),
-        sv.PolygonZone(polygon=ZONE_POLYGON_RT,
+        sv.PolygonZone(polygon=ZONE_POLYGON_UPL,
                        frame_resolution_wh=tuple(args.webcam_resolution)),
-        sv.PolygonZone(polygon=ZONE_POLYGON_DN,
+        sv.PolygonZone(polygon=ZONE_POLYGON_RTU,
                        frame_resolution_wh=tuple(args.webcam_resolution)),
-        sv.PolygonZone(polygon=ZONE_POLYGON_LT,
-                       frame_resolution_wh=tuple(args.webcam_resolution))
+        sv.PolygonZone(polygon=ZONE_POLYGON_RTD,
+                       frame_resolution_wh=tuple(args.webcam_resolution)),
+        sv.PolygonZone(polygon=ZONE_POLYGON_DNR,
+                       frame_resolution_wh=tuple(args.webcam_resolution)),
+        sv.PolygonZone(polygon=ZONE_POLYGON_DNL,
+                       frame_resolution_wh=tuple(args.webcam_resolution)),
+        sv.PolygonZone(polygon=ZONE_POLYGON_LTU,
+                       frame_resolution_wh=tuple(args.webcam_resolution)),
+        sv.PolygonZone(polygon=ZONE_POLYGON_LTD,
+                       frame_resolution_wh=tuple(args.webcam_resolution)),
     ]
 
     zone_annotators = [
@@ -86,7 +128,8 @@ def main():
         for zone in zones
     ]
 
-    car_counts_update = [0]*len(zones)
+    cars_in_update = [0]*(len(zones)//2)
+    cars_out_update = [0]*(len(zones)//2)
     client = MQTTClient()  # create new instance of camera
     client.connect()
     print('\n')
@@ -111,10 +154,13 @@ def main():
 
             frame = box_annotator.annotate(
                 scene=frame, detections=detections, labels=labels)
-            car_counts = [0]*len(zones)
+            cars_in = [0]*(len(zones)//2)
+            cars_out = [0]*(len(zones)//2)
             for i, zone in enumerate(zones):
-
-                car_counts[i] = zone.current_count
+                if i % 2 == 0:
+                    cars_in[i//2] = zone.current_count
+                else:
+                    cars_out[i//2] = zone.current_count
                 zone.trigger(detections=detections)
                 frame = zone_annotators[i].annotate(scene=frame)
 
@@ -123,11 +169,18 @@ def main():
             if cv2.waitKey(30) == 27:
                 break
 
-            print(car_counts)
+            print(cars_in)
+            print(cars_out)
 
-            if (np.array_equal(car_counts, car_counts_update) == False):
-                client.publish("data_camera", car_counts)
-                car_counts_update = copy.deepcopy(car_counts)
+            if (np.array_equal(cars_in, cars_in_update) == False):
+                client.publish("data_camera_in", cars_in)
+                cars_in_update = copy.deepcopy(cars_in)
+
+            # TODO sostituire comunicazione MQTT con HTTP per comunicare al server l'array di macchine in uscita dall'incrocio
+
+            if (np.array_equal(cars_out, cars_out_update) == False):
+                client.publish("data_camera_out", cars_out)
+                cars_out_update = copy.deepcopy(cars_out)
 
     except (KeyboardInterrupt):
         print()
