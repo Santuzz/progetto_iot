@@ -5,6 +5,7 @@ from ultralytics import YOLO
 import supervision as sv
 from mqtt_client import MQTTClient
 import copy
+import time
 
 width = 1920
 height = 1080
@@ -94,7 +95,7 @@ def main():
     capture.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
     capture.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
 
-    model = YOLO("yolov8l.pt")
+    model = YOLO("yolov8m.pt")
 
     box_annotator = sv.BoxAnnotator(
         thickness=2,
@@ -135,13 +136,19 @@ def main():
     print('\n')
     client.subscribe("data_camera")
 
+    cars_in = [0]*(len(zones)//2)
+    cars_out = [0]*(len(zones)//2)
+    # frame_count = 0
+
     # TODO ottenere il numero di macchine nelle varie zone per poi mandarlo al server.
     # Allo stesso tempo il count deve essere disponibile al bridge dell'arduino con il semaforo
     try:
         while True:
+            time_exp = time.time()*1000
+
             ret, frame = capture.read()
 
-            result = model(frame)[0]
+            result = model(frame, classes=2)[0]
             detections = sv.Detections.from_ultralytics(result)
             # riconoscimento delle sole auto (detections.class_id==2)
             detections = detections[detections.class_id == 2]
@@ -152,10 +159,8 @@ def main():
                 in detections
             ]
 
-            frame = box_annotator.annotate(
-                scene=frame, detections=detections, labels=labels)
-            cars_in = [0]*(len(zones)//2)
-            cars_out = [0]*(len(zones)//2)
+            frame = box_annotator.annotate(scene=frame, detections=detections, labels=labels)
+
             for i, zone in enumerate(zones):
                 if i % 2 == 0:
                     cars_in[i//2] = zone.current_count
@@ -169,18 +174,16 @@ def main():
             if cv2.waitKey(30) == 27:
                 break
 
-            print(cars_in)
-            print(cars_out)
+            # print(cars_in)
+            # print(cars_out)
 
             if (np.array_equal(cars_in, cars_in_update) == False):
-                client.publish("data_camera_in", cars_in)
+                client.publish("data_camera", cars_in)
                 cars_in_update = copy.deepcopy(cars_in)
-
+            print(time_exp-time.time()*1000)
             # TODO sostituire comunicazione MQTT con HTTP per comunicare al server l'array di macchine in uscita dall'incrocio
 
-            if (np.array_equal(cars_out, cars_out_update) == False):
-                client.publish("data_camera_out", cars_out)
-                cars_out_update = copy.deepcopy(cars_out)
+            # frame_count += 1
 
     except (KeyboardInterrupt):
         print()
