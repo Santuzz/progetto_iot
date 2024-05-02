@@ -42,3 +42,17 @@ def read_increment():
     except Exception as e:
         print(f"Error during config file loading: {e}")
         exit(1)
+
+
+def read_mqtt():
+    config = configparser.ConfigParser()
+    try:
+        config.read('../config.ini')
+        parameters = config['MQTT']
+        return parameters
+    except KeyError as e:
+        print(f"Missing key: {e}")
+        exit(1)
+    except Exception as e:
+        print(f"Error during config file loading: {e}")
+        exit(1)
