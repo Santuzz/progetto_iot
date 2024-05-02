@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from .models import *
 import sys
 import paho.mqtt.client as mqtt
+from django.utils.timezone import now
 
 try:
     from config import read_increment
@@ -44,6 +45,7 @@ def traffic_update(instance):
 
         result = traffic_level*read_increment()
         rel.crossroad.traffic_level = result
+        rel.crossroad.last_send = now()
         rel.crossroad.save()
         traffic_levels[rel.crossroad.name] = traffic_level
         traffic_level = 0
