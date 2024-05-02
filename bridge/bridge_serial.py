@@ -2,7 +2,7 @@ import serial
 import time
 import serial.tools.list_ports
 
-import configparser
+from config import read_serial
 
 import json
 from datetime import datetime
@@ -11,25 +11,10 @@ from REST_communication import RestAPI
 # import paho.mqtt.client as mqtt
 
 
-def read_config():
-    config = configparser.ConfigParser()
-    try:
-        config.read('config.ini')
-        server_address = config.get("DEFAULT", "SERVER_ADDRESS")
-        serial_port = config['DEFAULT']['SERIAL_PORT']
-        return server_address, serial_port
-    except KeyError as e:
-        print(f"Chiave mancante nel file di configurazione: {e}")
-        exit(1)
-    except Exception as e:
-        print(f"Errore nel caricamento del file di configurazione: {e}")
-        exit(1)
-
-
 class Bridge():
 
     def __init__(self):
-        self.base_url, self.serial_port = read_config()
+        self.serial_port = read_serial()
         # self.setupSerial()
         self.crossroad = "via Bella"
         self.data = {
@@ -60,14 +45,14 @@ class Bridge():
 
     def loop(self):
         # infinite loop for serial managing
-        rest = RestAPI(user={'email': 'admin@admin.com', 'password': 'admin', 'username': 'admin'})
+        """rest = RestAPI(user={'email': 'admin@admin.com', 'password': 'admin', 'username': 'admin'})
         valid = self.setupServer(rest).json()
         if 'Invalid' in valid:
             print(valid)
-            exit(1)
+            exit(1)"""
 
-        current_time = time.time()
-        current_cars = self.cars_count
+        # current_time = time.time()
+        # current_cars = self.cars_count
         try:
             while (True):
                 # TODO Comunicazione seriale con Arduino
@@ -86,13 +71,13 @@ class Bridge():
 
                 # Comnicazione server
 
-                if time.time()-current_time >= 5:
+                """if time.time()-current_time >= 5:
                     if current_cars != self.cars_count:
                         rest.send_count(self.crossroad, self.cars_count)
                         current_cars = self.cars_count
 
                     current_time = time.time()
-
+                """
                 time.sleep(1)
         except (KeyboardInterrupt):
             print()

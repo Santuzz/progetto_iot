@@ -1,6 +1,6 @@
 import serial
 import json
-from mqtt_client import MQTTClient
+from object_detection.mqtt_client import MQTTClient
 import numpy as np
 from datetime import datetime
 from datetime import timedelta
