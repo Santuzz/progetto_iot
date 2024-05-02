@@ -17,6 +17,9 @@ from rest_framework.authtoken.models import Token
 
 import re
 
+from django.db.models import Sum
+
+
 """ class WebcamCreateView(generics.CreateAPIView):
     queryset = Webcam.objects.all()
     serializer_class = WebcamSerializer
@@ -393,15 +396,22 @@ class CrossroadAPI(APIView):
         for key, value in request.data.items():
             if type(value) is str:
                 request.data[key] = value.lower()
+        cars_count = obj.cars_count
         serializer = CrossroadSerializer(obj, data=request.data)
         if not serializer.is_valid(raise_exception=True):
             return Response({"Invalid": "Impossible to serialize input data", "data": request.data}, status=status.HTTP_400_BAD_REQUEST)
-        instance = serializer.save()
-        # TODO Elaborazione vagtore di auto
-        # chiamo tutti gli incroci collegati (ovvero quelli associati alle street associate all'incrocio)
-        neighbor_streets = Street.objects.filter(crossroad=obj)
-        neighbor_crossroads = Crossroad.objects.filter(street__in=neighbor_streets).exclude(name=obj.name).distinct()
-        print(neighbor_crossroads)
+        crossroad = serializer.save()
+        if 'cars_count' in request.data:
+            if request.data['cars_count'] != cars_count:
+
+                # Ottieni le strade vicine legate a questa crossroad.
+                street_crossroads = StreetCrossroad.objects.filter(crossroad=obj).order_by('index')
+                cars_count = crossroad.get_list_count()
+                for street_crossroad, count in zip(street_crossroads, cars_count):
+                    if street_crossroad.cars != count:
+                        street_crossroad.cars = count
+                        street_crossroad.save()
+
         return JsonResponse(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     def delete(self, request, name=None):
@@ -410,8 +420,7 @@ class CrossroadAPI(APIView):
         obj = get_object_or_response(Crossroad, pk=name.lower())
         if isinstance(obj, Response):
             return obj
-        response = delete_view(
-            request._request, pk=name.lower())
+        response = delete_view(request._request, pk=name.lower())
         return Response({'message': 'Crossroad successfully deleted.'}, status=status.HTTP_204_NO_CONTENT)
 
 

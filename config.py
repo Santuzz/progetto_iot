@@ -8,10 +8,10 @@ def read_serial():
         serial_port = config['DEFAULT']['SERIAL_PORT']
         return serial_port
     except KeyError as e:
-        print(f"Chiave mancante nel file di configurazione: {e}")
+        print(f"Missing key: {e}")
         exit(1)
     except Exception as e:
-        print(f"Errore nel caricamento del file di configurazione: {e}")
+        print(f"Error during config file loading: {e}")
         exit(1)
 
 
@@ -23,8 +23,22 @@ def read_network():
         server_address = config['DEFAULT']['SERVER_ADDRESS']
         return server_address
     except KeyError as e:
-        print(f"Chiave mancante nel file di configurazione: {e}")
+        print(f"Missing key: {e}")
         exit(1)
     except Exception as e:
-        print(f"Errore nel caricamento del file di configurazione: {e}")
+        print(f"Error during config file loading: {e}")
+        exit(1)
+
+
+def read_increment():
+    config = configparser.ConfigParser()
+    try:
+        config.read('../config.ini')
+        increment = config['DJANGO']['INCREMENT_PER_CAR']
+        return int(increment)
+    except KeyError as e:
+        print(f"Missing key: {e}")
+        exit(1)
+    except Exception as e:
+        print(f"Error during config file loading: {e}")
         exit(1)
