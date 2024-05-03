@@ -4,7 +4,7 @@ import configparser
 def read_serial():
     config = configparser.ConfigParser()
     try:
-        config.read('config.ini')
+        config.read('../config.ini')
         serial_port = config['DEFAULT']['SERIAL_PORT']
         return serial_port
     except KeyError as e:
@@ -49,7 +49,17 @@ def read_mqtt():
     try:
         config.read('../config.ini')
         parameters = config['MQTT']
-        return parameters
+        config_dict = {}
+        for key in parameters:
+            try:
+                # Converti i valori numerici, mantenendo le stringhe come tali
+                config_dict[key] = int(parameters[key])
+            except ValueError:
+                try:
+                    config_dict[key] = float(parameters[key])
+                except ValueError:
+                    config_dict[key] = parameters[key]
+        return config_dict
     except KeyError as e:
         print(f"Missing key: {e}")
         exit(1)

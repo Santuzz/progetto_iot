@@ -181,7 +181,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--model', choices=['webcam', 'crossroad', 'street', 'trafficlight'], required=True, help='Select model')
     parser.add_argument(
-        '--method', choices=['GET', 'POST', 'PUT', 'DELETE'], required=False, help='Select method')
+        '--method', choices=['GET', 'POST', 'PUT', 'DELETE'], required=True, help='Select method')
 
     # webcam
     parser.add_argument('--id', type=int, required=False, help='Select id')

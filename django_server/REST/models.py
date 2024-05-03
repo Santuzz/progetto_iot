@@ -13,7 +13,7 @@ class Crossroad(models.Model):
     last_send = models.DateTimeField(auto_now_add=False, blank=True, null=True)
     creation_date = models.DateTimeField(
         auto_now_add=True, blank=True, null=True)
-    traffic_level = models.FloatField(default=0)
+    traffic_level = models.FloatField(default=0)  # Il plus_time che riceve il bridge
     active = models.BooleanField(default=False)
 
     def __str__(self):

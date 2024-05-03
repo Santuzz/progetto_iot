@@ -2,8 +2,9 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import *
 import sys
-import paho.mqtt.client as mqtt
 from django.utils.timezone import now
+from mqtt_integration.MQTT_client import MQTT_client
+import time
 
 try:
     from config import read_increment
@@ -13,12 +14,12 @@ except ImportError:
 
 
 def publish_message(crossroad, message):
-    client = mqtt.Client()
-    mqtt_parameters = read_mqtt()
-    client.connect(mqtt_parameters["BROKER"], int(mqtt_parameters["PORT"]), 60)
-    topic = "data_traffic_" + crossroad.replace(" ", "_")
-    client.publish(topic, message)
-    client.disconnect()
+    topic = "data_traffic/" + crossroad.replace(" ", "_")
+    client = MQTT_client("django")
+    client.start(topic)
+    client.publish(message)
+    time.sleep(1)
+    client.stop()
 
 
 def traffic_update(instance):
@@ -30,8 +31,7 @@ def traffic_update(instance):
     for rel in related_street_crossroads:
         # per ogni crossroad trovata dalle relazioni trovo le sue street
         streets_linked_to_crossroad = Street.objects.filter(
-            streetcrossroad__crossroad__name=rel.crossroad
-        ).distinct()
+            streetcrossroad__crossroad__name=rel.crossroad).distinct()
         # Trovo tutte le relazioni che hanno le street di un crossroad escudendo quelle con il crossroad stesso
         street_crossroads_excluding_initial = StreetCrossroad.objects.filter(
             street__in=streets_linked_to_crossroad).exclude(crossroad__name=rel.crossroad)
@@ -53,7 +53,7 @@ def traffic_update(instance):
     return traffic_levels
 
 
-@receiver(post_save, sender=StreetCrossroad)
+@ receiver(post_save, sender=StreetCrossroad)
 def handle_cars_update(sender, instance, created, **kwargs):
     if not created:  # Questo garantisce che il segnale reagisca solo agli aggiornamenti, non alla creazione
         # Esegui il calcolo solo se 'cars' è cambiato
