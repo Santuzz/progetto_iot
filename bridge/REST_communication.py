@@ -1,11 +1,20 @@
 import requests
 import datetime
 import argparse
+import sys
+
+
+try:
+    from config import read_network
+except ImportError:
+    sys.path.append('..')
+
+    from config import read_network
 
 
 class RestAPI:
-    def __init__(self, user, base_url='http://localhost:8000/api/'):
-        self.base_url = base_url
+    def __init__(self, user):
+        self.base_url = read_network()
         self.user = user
         if user.get('password') is None or (user.get('username') is None and user.get('email') is None):
             raise Exception(
@@ -64,15 +73,15 @@ class RestAPI:
 
     def send_count(self, crossroad, cars_count):
         url = f'crossroad/'
+        crossroad = crossroad.lower()
         # convert from list to string
         cars_count = ", ".join(str(num) for num in cars_count)
         last_send = self.get_current_date()
         data = {"cars_count": cars_count,
                 "last_send": last_send,
                 "name": crossroad}
-        print(data)
         response = self.request('PUT', url+crossroad+"/", data)
-        print(response.json())
+        return response
 
 
 def fill_data(args):
@@ -172,7 +181,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--model', choices=['webcam', 'crossroad', 'street', 'trafficlight'], required=True, help='Select model')
     parser.add_argument(
-        '--method', choices=['GET', 'POST', 'PUT', 'DELETE'], required=False, help='Select method')
+        '--method', choices=['GET', 'POST', 'PUT', 'DELETE'], required=True, help='Select method')
 
     # webcam
     parser.add_argument('--id', type=int, required=False, help='Select id')

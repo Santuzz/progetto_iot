@@ -1,0 +1,36 @@
+REST_communication.py script takes these mandatory commands line parameters:
+    1. --method: [ 'GET','POST', 'PUT', 'DELETE' ]
+    2. --model: ['webcam', 'crossroad', 'street', 'trafficlight']
+There are also specific parameters based on model choosen:
+    Webcam:
+        1. [--id]: id of the referred element
+        2. [--crossroad]: name of the crossroad associated to the webcam
+        3. [--active]: Boolean value to indicate whether the webcam is working or not
+    Crossroad:
+        1. [--name]: name of the crossroad a.k.a. the id 
+        2. [--lat]: latitude of the element
+        3. [--lon]: longitude of the element
+        4. [--traffic]: duration of the green light for a specific trafficlight in the crossroad
+        5. [--cars]: array of integers to indicate the number of cars for each street in the crossroad
+        6. [--active]: Boolean value to indicate whether the webcam is working or not
+    Street:
+        1. [--name]: name of the street a.k.a. the id
+        2. [--length]: length of the street in meters
+        3. [--alert]: Boolean value set to True if the number of cars is too high
+        4. [--crossroad]: name of the crossroad associated to the webcam
+
+
+ESEMPI UTILIZZO:
+
+###CREAZIONE CROSSROAD###
+python.exe  .\REST_communication.py  --model crossroad --method POST --name Incrocio_Assassino --lat 10.45 --lon 34.21  --traffic 0 --cars 0,1,2,1 --active true
+
+###CREAZIONE STREET###
+python.exe  .\REST_communication.py  --model street --method POST --name Via_Sassolino --length 100 --alert false --crossroad Incrocio_Assassino
+
+###AGGIORNAMENTO AUTO###
+python.exe  .\REST_communication.py  --model crossroad --method PUT --name Incrocio_Assassino  --cars 10,1,2,2
+
+
+
+

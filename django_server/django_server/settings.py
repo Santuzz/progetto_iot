@@ -130,7 +130,7 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # MQTT configuration
-MQTT_BROKER_HOST = "172.0.0.2"
+MQTT_BROKER_HOST = "localhost"
 MQTT_BROKER_PORT = 1883  # Cambialo se necessario
 MQTT_BROKER_KEEPALIVE = 60  # Cambialo se necessario
 MQTT_QOS = 2

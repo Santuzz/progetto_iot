@@ -1,10 +1,11 @@
 Davide:
     - comunicazione bridge-server:
-        - Far comunicare detection_YOLO8.py con il server tramite API
         - Modificare cars_count sul server (cars_count -> cars_leave)
-        - elaborare gli array degli incroci adiacenti per creare il plus_time da inviare al bridge
-        - Creare un istanza di RestAPI su bridge_serial.py da usare per far comunicare il bridge con il server
-        - Creare una comunicazione MQTT tra il server e il bridge
+        - Unire i vari pezzi di bridge in uno unico
+        - Documentazione API
+        + Creata relazione ManyToMany tra crossroad e street per gestire le autoche escono da un incrocio (cars) e per associare una street a uno dei lati dell'incrocio (index)
+        + Elaborato i dati degli incroci per definire il plus_time (traffic_level) da inviare ad un incrocio
+        + Creato il publish server-bridge per inviare il plus_time
 
 Erika:
     - Creare lo script di arduino che riceva i dati dal bridge per gestire il semaforo

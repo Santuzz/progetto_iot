@@ -1,22 +1,32 @@
+import torch
 import cv2
 import argparse
 import numpy as np
 from ultralytics import YOLO
 import supervision as sv
-from mqtt_client import MQTTClient
+
 import copy
 import time
+
+import sys
+
+from mqtt_client import MQTTClient
+# from REST_communication import RestAPI
+
+
+try:
+    from bridge.REST_communication import RestAPI
+except ImportError:
+    sys.path.append('..')
+    from bridge.REST_communication import RestAPI
+    from config import read_network
+
 
 width = 1920
 height = 1080
 center_width = width // 2
 center_height = height // 2
 shift_center = 300 // 2
-
-
-# Definizione dei vertici per i quattro trapezi
-# TODO ridefinire le zone in base alla posizione della cam
-
 
 ZONE_POLYGON_UPR = np.array([
     [center_width-shift_center, 0],
@@ -30,42 +40,36 @@ ZONE_POLYGON_UPL = np.array([
     [center_width+shift_center, center_height-shift_center],
     [width//2, center_height-shift_center]
 ])
-
 ZONE_POLYGON_RTU = np.array([
     [width, center_height-shift_center],
     [width, height//2],
     [center_width+shift_center, height//2],
     [center_width+shift_center, center_height-shift_center]
 ])
-
 ZONE_POLYGON_RTD = np.array([
     [width, height//2],
     [width, center_height+shift_center],
     [center_width+shift_center, center_height+shift_center],
     [center_width+shift_center, height//2]
 ])
-
 ZONE_POLYGON_DNR = np.array([
     [center_width+shift_center, height],
     [width//2, height],
     [width//2, center_height+shift_center],
     [center_width+shift_center, center_height+shift_center]
 ])
-
 ZONE_POLYGON_DNL = np.array([
     [width//2, height],
     [center_width-shift_center, height],
     [center_width-shift_center, center_height+shift_center],
     [width//2, center_height+shift_center]
 ])
-
 ZONE_POLYGON_LTU = np.array([
     [0, center_height+shift_center],
     [0, height//2],
     [center_width-shift_center, height//2],
     [center_width-shift_center, center_height+shift_center]
 ])
-
 ZONE_POLYGON_LTD = np.array([
     [0, height//2],
     [0, center_height-shift_center],
@@ -88,6 +92,14 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def main():
+    rest = RestAPI(user={'email': 'admin@admin.com', 'password': 'admin', 'username': 'admin'})
+    crossroad = "via Bella"
+    data = {
+        "name": crossroad,
+        "latitude": 46.321,
+        "longitude": 11.123,
+    }
+
     args = parse_arguments()
     frame_width, frame_height = args.webcam_resolution
 
@@ -95,7 +107,7 @@ def main():
     capture.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
     capture.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
 
-    model = YOLO("yolov8m.pt")
+    model = YOLO("yolov8l.pt")
 
     box_annotator = sv.BoxAnnotator(
         thickness=2,
@@ -124,13 +136,12 @@ def main():
     ]
 
     zone_annotators = [
-        sv.PolygonZoneAnnotator(
-            zone=zone, color=sv.Color.RED, thickness=2, text_thickness=4, text_scale=2)
+        sv.PolygonZoneAnnotator(zone=zone, color=sv.Color.RED, thickness=2, text_thickness=4, text_scale=2)
         for zone in zones
     ]
 
-    cars_in_update = [0]*(len(zones)//2)
-    cars_out_update = [0]*(len(zones)//2)
+    previous_in = [0]*(len(zones)//2)
+    previous_out = [0]*(len(zones)//2)
     client = MQTTClient()  # create new instance of camera
     client.connect()
     print('\n')
@@ -138,16 +149,16 @@ def main():
 
     cars_in = [0]*(len(zones)//2)
     cars_out = [0]*(len(zones)//2)
-    # frame_count = 0
+    frame_count = 0
 
     # TODO ottenere il numero di macchine nelle varie zone per poi mandarlo al server.
     # Allo stesso tempo il count deve essere disponibile al bridge dell'arduino con il semaforo
     try:
         while True:
-            time_exp = time.time()*1000
-
             ret, frame = capture.read()
-
+            # on GPU
+            # result = model(frame, classes=2, device="mps")[0]
+            # on CPU
             result = model(frame, classes=2)[0]
             detections = sv.Detections.from_ultralytics(result)
             # riconoscimento delle sole auto (detections.class_id==2)
@@ -177,14 +188,23 @@ def main():
             # print(cars_in)
             # print(cars_out)
 
-            if (np.array_equal(cars_in, cars_in_update) == False):
+            if (cars_in != previous_in):
                 client.publish("data_camera", cars_in)
-                cars_in_update = copy.deepcopy(cars_in)
-            print(time_exp-time.time()*1000)
-            # TODO sostituire comunicazione MQTT con HTTP per comunicare al server l'array di macchine in uscita dall'incrocio
+                previous_in = cars_in
+            # Comunicazione HTTP ogni 30 cicli
+            print(cars_out)
+            print(previous_out)
+            if (frame_count % 30 == 0 and cars_out != previous_out):
+                valid = rest.send_count(crossroad, cars_out)
 
-            # frame_count += 1
-            
+                if 'Invalid' in valid:
+                    print(valid)
+                    exit(1)
+
+                previous_out = list(cars_out)
+
+            frame_count += 1
+
     except (KeyboardInterrupt):
         print()
         print("Loop interrupted")
