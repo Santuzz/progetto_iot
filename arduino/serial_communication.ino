@@ -1,3 +1,6 @@
+//#define SEND_INTERVAL 5000 // every 5 seconds
+unsigned long send_interval = 0;
+
 const int road_a_redPin = 2;    // Connect the red LED to pin 2
 const int road_a_yellowPin = 3; // Connect the yellow LED to pin 3
 const int road_a_greenPin = 4;  // Connect the green LED to pin 4
@@ -16,53 +19,57 @@ long road_intervalGreen = 0;
 
 int currentState = 0;
 
-const int baudRate = 9600; // Adjust baud rate if needed
-const byte START_BYTE = 0xFF;
-const byte END_BYTE = 0xFE;
+/* Serial Send variables */
+unsigned long timestamp;
 
-unsigned long lastMillis = 0;  // Millisecond counter for timing
-long plus_time = 0;           // Variable to store the time to be added to green interval
+/* Serial Receive variables */
+#define BUFFDIM 3 // header, plus_time, footer
+long plus_time = 0;
 
-void setup() {
-    pinMode(road_a_redPin, OUTPUT);
-    pinMode(road_a_yellowPin, OUTPUT);
-    pinMode(road_a_greenPin, OUTPUT);
-    pinMode(road_b_redPin, OUTPUT);
-    pinMode(road_b_yellowPin, OUTPUT);
-    pinMode(road_b_greenPin, OUTPUT);
+unsigned char ucInBuffer[BUFFDIM];  // Buffer to memorize packet bytes 
+size_t stBufferIndex;     // Index of the buffer
 
-    Serial.begin(baudRate);
+void setup()
+{
+  /* Serial Send setup */
+  Serial.begin(9600);
+  pinMode(road_a_redPin, OUTPUT);
+  pinMode(road_a_yellowPin, OUTPUT);
+  pinMode(road_a_greenPin, OUTPUT);
+  pinMode(road_b_redPin, OUTPUT);
+  pinMode(road_b_yellowPin, OUTPUT);
+  pinMode(road_b_greenPin, OUTPUT);
+
+  timestamp = 0;
+
+  /* Serial Receive setup */
+  for (stBufferIndex = 0; stBufferIndex < BUFFDIM; stBufferIndex++)
+    ucInBuffer[stBufferIndex] = 0;
+
+  stBufferIndex = 0;
+
+  
 }
 
-void loop() {
-    road_intervalRed = 0;
-    road_intervalGreen = 0;
+void loop()
+{
+  
+  // Serial Send Trial
+  int r = serialReceive(&plus_time);
 
-    // Check if 1 second has elapsed since the last iteration
-    /*if (millis() - lastMillis >= 1000) {
-        lastMillis = millis();
+  // if we recived a packet do something (turn on led for example)
+  if (r == 1)
+  {
+    Serial.write(plus_time);
+    processPlusTime(plus_time, &road_intervalRed, &road_intervalGreen);
+    Serial.write("ok");
 
-        // Check if there are data available on the serial port
-        if (Serial.available() >= 3) {
-            if (Serial.read() == START_BYTE) { // Read and check the first byte
-                plus_time = Serial.parseInt(); // Read the additional time from serial
-                if (Serial.read() == END_BYTE) { // Read and check the end byte
-                    // Process the additional time
-                    processPlusTime();
-                } else {
-                    // Handle case where end byte is missing
-                    Serial.println("Error: Missing end byte");
-                }
-            } else {
-                // Handle case where start byte is missing
-                Serial.println("Error: Missing start byte");
-                // Clear the serial buffer to prevent overflow
-                Serial.read(10); // Read and discard up to 10 bytes
-            }
-        }
-    }*/
+  } else {
+    road_intervalRed = intervalRed;
+    road_intervalGreen = intervalGreen;
+  }
 
-    // Traffic light management based on the current state
+  // Traffic light management based on the current state
     unsigned long currentMillis = millis();
     switch (currentState) {
         case 0: // Red road_a, Green road_b
@@ -125,31 +132,90 @@ void loop() {
             }
             break;
     }
+
 }
 
-void processPlusTime() {
+int serialReceive(long *plus_time)
+{
+  if(millis() - timestamp > 10000) {
+    timestamp = millis();
+    // If there are some data from the serial
+  if (Serial.available() > 0)
+  {
+    unsigned char ucData;
+    ucData = Serial.read(); // read a byte
+    if (ucData == 0xFE) // EOF
+    {
+      // Append last byte
+      ucInBuffer[stBufferIndex] = ucData;
+      stBufferIndex++;
+      int r = useData(&plus_time);
+
+      // Clear buffer
+      for (stBufferIndex = 0; stBufferIndex < BUFFDIM; stBufferIndex++)
+        ucInBuffer[stBufferIndex] = 0;
+
+      stBufferIndex = 0;
+      if (r == 1)
+        return 1;
+    }
+    else
+    {
+      // Append
+      ucInBuffer[stBufferIndex] = ucData;
+      stBufferIndex++;
+    }
+  }
+  
+  return 0; 
+   
+  }
+}
+
+/* Elaborate received data */
+int useData(long **plus_time)
+{
+  if (stBufferIndex < BUFFDIM)  // at least header, plus_time, footer
+    return 0;
+
+  if (ucInBuffer[0] != 0xFF)
+    return 0;
+
+  // getting value
+  long ucVal = ucInBuffer[1];
+   
+  // use of value
+  *(*plus_time) = ucVal;
+  if (ucVal < 0){
+    ucVal *= -1;
+  }
+  send_interval = ucVal;
+  return 1;
+}
+
+void processPlusTime(int plus_time, long *road_intervalRed, long *road_intervalGreen) {
     // Process the additional time received from serial
     // Update the green interval time based on the value of plus_time
     if (plus_time > 0) {
         // The red interval for road_a and the green interval for road_b is the same
         // The green interval for road_a and the red interval for road_b is the same
-        road_intervalRed = intervalRed - ((plus_time * 1000)/2);
-        road_intervalGreen = intervalGreen + (plus_time * 1000); // Convert seconds to milliseconds and add to green interval
+        *road_intervalRed = intervalRed - ((plus_time * 1000)/2);
+        *road_intervalGreen = intervalGreen + (plus_time * 1000); // Convert seconds to milliseconds and add to green interval
         
         // Ensure that the red interval is not less than 3000 milliseconds (3 second)
-        if (road_intervalRed < 3000) {
-           road_intervalRed = 3000;
+        if (*road_intervalRed < 3000) {
+           *road_intervalRed = 3000;
         }
     } else if (plus_time < 0) {
-        road_intervalGreen = intervalGreen - ((-plus_time) * 1000); // Convert seconds to milliseconds and subtract from green interval
-        road_intervalRed = intervalRed + (((-plus_time) * 1000)/2);
+        *road_intervalGreen = intervalGreen - ((-plus_time) * 1000); // Convert seconds to milliseconds and subtract from green interval
+        *road_intervalRed = intervalRed + (((-plus_time) * 1000)/2);
         
         // Ensure that the green interval is not less than 3000 milliseconds (3 second)
-        if (road_intervalGreen < 3000) {
-            road_intervalGreen = 3000;
+        if (*road_intervalGreen < 3000) {
+            *road_intervalGreen = 3000;
         }
     } else {
-        road_intervalGreen = intervalGreen;
-        road_intervalRed = intervalRed;
+        *road_intervalGreen = intervalGreen;
+        *road_intervalRed = intervalRed;
     }
 }

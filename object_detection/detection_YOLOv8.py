@@ -184,7 +184,7 @@ def main():
             # TODO sostituire comunicazione MQTT con HTTP per comunicare al server l'array di macchine in uscita dall'incrocio
 
             # frame_count += 1
-
+            
     except (KeyboardInterrupt):
         print()
         print("Loop interrupted")
