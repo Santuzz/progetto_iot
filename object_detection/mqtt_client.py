@@ -60,7 +60,6 @@ class MQTTClient:
     def message_None(self):
         self.message_payload = None
 
-    # TODO dovrebbe essere inutile
     def get_timestamp_message(self):
         print("timestamp_message:", self.timestamp_message)
         return self.timestamp_message

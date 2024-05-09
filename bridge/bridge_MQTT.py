@@ -1,11 +1,16 @@
 import serial
-import json
-from object_detection.mqtt_client import MQTTClient
 import numpy as np
 from datetime import datetime
 from datetime import timedelta
 import time
-import struct
+#import struct
+
+import sys
+try:
+    from object_detection.mqtt_client import MQTTClient
+except ImportError:
+    sys.path.append('..')
+    from object_detection.mqtt_client import MQTTClient
 
 # Configuration of the serial port for Arduino
 serial_port = 'COM3'  # Correct serial port for Arduino
@@ -35,11 +40,9 @@ def serialSend(plus_time):
     ser.write(b'\xFE')
 
 # Wait until a new message is received
-# TODO questo si può togliere, no?
 #while client.get_message_payload() is None:
  #   pass
 
-# TODO al posto di datetime.now() che ritorna anche la data, si potrebbe optare per time.time()che restituisce direttamenti i secondi
 t = datetime.now()
 previous_time = t - timedelta(seconds=5)
 #print("previous_time:", previous_time)
@@ -49,9 +52,6 @@ try:
     while (True):
 
     # Wait until a new message is received
-    # TODO rimuovere questo loop perchè altrimenti il bridge rimane bloccato a far nulla
-    # oltre a captare i messaggi sul topic MQTT deve anche comunicare con arduino e con il server
-    # da sostituire con un if visto che siamo già in un ciclo infinito
         while client.get_message_payload() is None:
             pass
 
@@ -59,7 +59,6 @@ try:
         #    pass
 
         # Get the arrival time of the message from the MQTT client
-        # TODO da rimuovere perchè il tempo lo calcoliamo direttamente con la funzione time.time()
         timestamp_message = client.get_timestamp_message()
         print("Received timestamp_message_bridge:", timestamp_message)
 
@@ -71,13 +70,10 @@ try:
         print("time_difference:", time_difference)
 
         # Create a timedelta object to represent 5 seconds
-        # TODO se non si usa datetime questa variabile risulta inutile
         five_seconds = timedelta(seconds=5)
         #print("five_seconds", five_seconds)
 
         # Compare the time difference with 5 seconds
-        # TODO la condizione potrebbe essere: time.time() - previous_time >= 5
-        # e alla fine dell'if si aggiorna previous_time con time.time()
         if time_difference >= five_seconds:
             # Get the message from the MQTT client
             message_payload = client.get_message_payload()
@@ -121,4 +117,6 @@ except (KeyboardInterrupt):
         print()
         print("Loop interrupted")
         client.disconnect()
+        print("Serial disconnected")
+        ser.close()
         exit(1)
