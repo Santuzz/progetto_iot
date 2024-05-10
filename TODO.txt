@@ -1,14 +1,12 @@
-Davide:
-    - comunicazione bridge-server:
-        - Modificare cars_count sul server (cars_count -> cars_leave)
-        - Unire i vari pezzi di bridge in uno unico
-        - Documentazione API
-        + Creata relazione ManyToMany tra crossroad e street per gestire le autoche escono da un incrocio (cars) e per associare una street a uno dei lati dell'incrocio (index)
-        + Elaborato i dati degli incroci per definire il plus_time (traffic_level) da inviare ad un incrocio
-        + Creato il publish server-bridge per inviare il plus_time
+Davide:   
+    - Unire bridge_serial e MQTT_bridge
+    - Scrivere le slide e il discorso inerenti alla parte server
+    - Assemblare due semafori su breadboard
+    - finire schema per slide
+        
 
 Erika:
-    - Creare lo script di arduino che riceva i dati dal bridge per gestire il semaforo
+    - Discorso relativo a bridge, arduino 
 
 Ppt:
  - 3 parti:
