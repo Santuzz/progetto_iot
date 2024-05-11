@@ -1,0 +1,5 @@
+{
+    "yaml.schemas": {
+        "swaggerviewer:openapi": "file:///Users/davide/Desktop/magistrale/IOT/progetto_iot/bridge/api.yaml"
+    }
+}

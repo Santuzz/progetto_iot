@@ -1,0 +1,108 @@
+# Aprire il file su https://editor.swagger.io/. C'è anche la ossibilità di provare le api. 
+# VsCode volendo ha l'estensione per swaggar.io
+
+openapi: 3.0.0
+info:
+  title: Clear the Way
+  description: API for managing smart traffic light
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:8000/api/
+paths:
+  /crossroad/:
+    post:
+      summary: Create a new crossroad
+      tags:
+        - Crossroad
+  
+      responses:
+        '201':
+          description: Crossroad successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /crossroad/{name}/:
+    put:
+      summary: Update a crossroad
+      tags:
+        - Crossroad
+      responses:
+        '201':
+          description: Crossroad updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+   
+    delete:
+      summary: Delete a crossroad
+      tags:
+        - Crossroad
+      responses:
+        '201':
+          description: Crossroad deleted
+
+  /street/:
+    post:
+      summary: Create a new street
+      tags:
+        - Street
+  
+      responses:
+        '201':
+          description: Street successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+
+  /street/{name}/:
+    put:
+      summary: Update a street
+      tags:
+        - Street
+      responses:
+        '201':
+          description: Crossroad updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+   
+    delete:
+      summary: Delete a street
+      tags:
+        - Street
+      responses:
+        '201':
+          description: Crossroad deleted
+
+
+
+ 
+components:
+  schemas:
+    Street:
+      type: object
+      properties:
+        nome:
+          type: string
+    
+    Crossroad:
+      type: object
+      properties:
+        nome:
+          type: string
+        
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+        error:
+          type: string
+          
+    
+
+    
