@@ -1,8 +1,8 @@
 Davide:   
-    - Unire bridge_serial e MQTT_bridge
+    + Unire bridge_serial e MQTT_bridge (DA TESTARE)
     - Scrivere le slide e il discorso inerenti alla parte server
-    - Assemblare due semafori su breadboard
-    - finire schema per slide
+    + Assemblare due semafori su breadboard
+    + finire schema per slide
         
 
 Erika:

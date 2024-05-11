@@ -1,122 +1,135 @@
 import serial
-import numpy as np
-from datetime import datetime
-from datetime import timedelta
 import time
-#import struct
+import serial.tools.list_ports
+import numpy as np
+from datetime import datetime, timedelta
+from REST_communication import RestAPI
+from django_server.mqtt_integration.MQTT_client import MQTT_client
 
 import sys
 try:
-    from object_detection.mqtt_client import MQTTClient
+    from config import read_serial
 except ImportError:
     sys.path.append('..')
+    from config import read_serial
     from object_detection.mqtt_client import MQTTClient
 
-# Configuration of the serial port for Arduino
-serial_port = 'COM3'  # Correct serial port for Arduino
-serial_baudrate = 9600
+# import paho.mqtt.client as mqtt
 
-# Open serial connection with Arduino
-ser = serial.Serial(serial_port, serial_baudrate)
-print(f"Serial connection opened on port {serial_port}")
 
-client = MQTTClient()  # create new instance of camera
-client.message()
-client.connect()
-print('\n')
-client.subscribe("data_camera")
-print('\n')
+class Bridge():
 
-def serialSend(plus_time):
-    # Send start byte to Arduino
-    ser.write(b'\xFF')
-    # Send data to Arduino
-    #byte_data = struct.pack('i', plus_time)
-    #ser.write(plus_time & 0xFF)
-    #ser.write((plus_time >> 8) & 0xFF)
-    ser.write(int.to_bytes(plus_time, length=1, byteorder='little'))
-    #print(f"Data sent to Arduino: {byte_data}")
-    # Send end byte to Arduino
-    ser.write(b'\xFE')
+    def __init__(self):
+        self.crossroad = "via Bella"
+        self.data = {
+            "name": self.crossroad,
+            "latitude": 46.321,
+            "longitude": 11.123,
+        }
 
-# Wait until a new message is received
-#while client.get_message_payload() is None:
- #   pass
+        self.cars_count = [0, 1, 0, 0]
+        self.server_connection = True
+        self.setupSerial()
+        self.setupMqttServer()
+        self.setupMqttGateway()
 
-t = datetime.now()
-previous_time = t - timedelta(seconds=5)
-#print("previous_time:", previous_time)
-#print('\n')
+    def setupSerial(self):
+        serial_port = 'COM3'
+        serial_baudrate = 9600
+        try:
+            self.ser = serial.Serial(serial_port, serial_baudrate)
+            print(f"Serial connection opened on port {serial_port}")
+        except serial.SerialException as e:
+            print(f"Error in opening the serial port: {e}")
+            exit()
 
-try:
-    while (True):
+    def mqtt_callback(self, message):
+        self.msg = message
+        print(f'Received message on topic: {self.topic} with payload: {self.msg}')
 
-    # Wait until a new message is received
-        while client.get_message_payload() is None:
-            pass
+    def setupMqttServer(self):
+        self.topic = "data_traffic/" + self.crossroad.lower().replace(" ", "_")
+        self.client_s = MQTT_client("bridge_serial")
+        self.client_s.add_callback(self.mqtt_callback)
+        self.client_s.start(self.topic)
+        self.client_s.subscribe(self.topic)
 
-        # while client.get_timestamp_message() is None:
-        #    pass
+    def setupMqttGateway(self):
+        self.client_g = MQTTClient()  # create new instance of camera
+        self.client_s.message()
+        self.client_s.connect()
+        print('\n')
+        self.client_s.subscribe("data_camera")
+        print('\n')
 
-        # Get the arrival time of the message from the MQTT client
-        timestamp_message = client.get_timestamp_message()
-        print("Received timestamp_message_bridge:", timestamp_message)
+    def serialSend(self, plus_time):
+        self.ser.write(b'\xFF')
+        self.ser.write(int.to_bytes(plus_time, length=1, byteorder='little'))
+        self.ser.write(b'\xFE')
 
-        current_time = datetime.now()
-        #print("current_time:", current_time)
+    def on_connect(self, client, userdata, flags, rc):
+        print("Connected with result code " + str(rc))
 
-        # Determine the time difference
-        time_difference = current_time - previous_time
-        print("time_difference:", time_difference)
+    def loop(self):
+        try:
+            while (True):
 
-        # Create a timedelta object to represent 5 seconds
-        five_seconds = timedelta(seconds=5)
-        #print("five_seconds", five_seconds)
+                # TODO comunicazione MQTT con object_detection/detection_YOLOv8.py
+                cars_count = 0
 
-        # Compare the time difference with 5 seconds
-        if time_difference >= five_seconds:
-            # Get the message from the MQTT client
-            message_payload = client.get_message_payload()
-            print("Received message_payload_bridge:", message_payload)
+                timestamp_message = self.client_g.get_timestamp_message()
+                print("Received timestamp_message_bridge:", timestamp_message)
 
-            message_camera = np.array(message_payload)
-            #print("message_camera:", message_camera)
-            #print('\n')
+                current_time = datetime.now()
+                time_difference = current_time - previous_time
+                print("time_difference:", time_difference)
+                five_seconds = timedelta(seconds=5)
+                if time_difference >= five_seconds:
+                    if not self.server_connection:
+                        message_payload = self.client_g.get_message_payload()
+                        print("Received message_payload_bridge:", message_payload)
 
-            client.message_None()
+                        message_camera = np.array(message_payload)
 
-            road_a = message_camera[0] + message_camera[2]
-            road_b = message_camera[1] + message_camera[3]
-            print("road_a:", road_a)
-            print("road_b:", road_b)
-            plus_time = 0
+                        self.client_g.message_None()
 
-            if (road_a > road_b):
-                plus_time = 2 * int(road_a)
-            elif (road_a == road_b):
-                plus_time = 0
-            else:
-                plus_time = -2 * int(road_b)
+                        road_a = message_camera[0] + message_camera[2]
+                        road_b = message_camera[1] + message_camera[3]
+                        print("road_a:", road_a)
+                        print("road_b:", road_b)
+                        plus_time = 0
 
-            print("plus_time", plus_time)
-            print('\n')
+                        if (road_a > road_b):
+                            plus_time = 2 * int(road_a)
+                        elif (road_a == road_b):
+                            plus_time = 0
+                        else:
+                            plus_time = -2 * int(road_b)
 
-            serialSend(plus_time)
-            #byte_send = ser.read(2)
-            #print("Message received by Arduino:", ser.readline())
+                        print("plus_time", plus_time)
+                        print('\n')
+                        self.serialSend(plus_time)
+                    else:
+                        if plus_time != self.msg:
+                            self.serialSend(self.msg)
+                            plus_time = self.msg
 
-            previous_time = timestamp_message
-            #print("previous_time:", previous_time)
-            #print('\n')
-        else:
-            print("Less than 5 seconds have passed since the message arrival compared to the current time.")
-            print('\n')
-            client.message_None()
+                    previous_time = timestamp_message
+                else:
+                    print("Less than 5 seconds have passed since the message arrival compared to the current time.")
+                    print('\n')
+                    self.client_g.message_None()
 
-except (KeyboardInterrupt):
-        print()
-        print("Loop interrupted")
-        client.disconnect()
-        print("Serial disconnected")
-        ser.close()
-        exit(1)
+                time.sleep(1)
+        except (KeyboardInterrupt):
+            print("Loop interrupted")
+            self.client_g.stop()
+            self.client_s.disconnect()
+            print("Serial disconnected")
+            self.ser.close()
+            exit(1)
+
+
+if __name__ == '__main__':
+    br = Bridge()
+    br.loop()
