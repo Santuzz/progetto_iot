@@ -27,7 +27,7 @@ def traffic_update(instance):
     related_street_crossroads = StreetCrossroad.objects.filter(
         street=instance.street).exclude(crossroad=instance.crossroad)
     traffic_level = 0  # plus_time nel bridge
-    traffic_levels = {}
+    traffic_cross = {}
     for rel in related_street_crossroads:
         # per ogni crossroad trovata dalle relazioni trovo le sue street
         streets_linked_to_crossroad = Street.objects.filter(
@@ -47,18 +47,20 @@ def traffic_update(instance):
         rel.crossroad.traffic_level = result
         rel.crossroad.last_send = now()
         rel.crossroad.save()
-        traffic_levels[rel.crossroad.name] = traffic_level
+        traffic_cross[rel.crossroad.name] = traffic_level
         traffic_level = 0
     # ritorno tutti gli incroci che hanno cambiato il proprio traffic_level per via del cambiamento del numero di macchine nella relazione SC iniziale
-    return traffic_levels
+    return traffic_cross
 
 
 @ receiver(post_save, sender=StreetCrossroad)
 def handle_cars_update(sender, instance, created, **kwargs):
     if not created:  # Questo garantisce che il segnale reagisca solo agli aggiornamenti, non alla creazione
         # Esegui il calcolo solo se 'cars' è cambiato
-        traffic_levels = traffic_update(instance)
-        print(traffic_levels)
-        # tramite MQTT invio ad ogni incrocio ritornatoil valore aggiornato del traffic_level
-        for crossroad, traffic_level in traffic_levels.items():
-            publish_message(crossroad, str(traffic_level))
+        traffic_cross = traffic_update(instance)
+        print("Crossroad changed: "+str(traffic_cross))
+
+        # tramite MQTT invio ad ogni incrocio ritornato il valore aggiornato del traffic_level
+        for crossroad, traffic_level in traffic_cross.items():
+            publish_message(crossroad, str(10*traffic_level))
+            # publish_message(crossroad, str(traffic_level))

@@ -9,6 +9,7 @@ from django_server.mqtt_integration.MQTT_client import MQTT_client
 import sys
 try:
     from config import read_serial
+    from object_detection.mqtt_client import MQTTClient
 except ImportError:
     sys.path.append('..')
     from config import read_serial
@@ -20,7 +21,7 @@ except ImportError:
 class Bridge():
 
     def __init__(self):
-        self.crossroad = "via Bella"
+        self.crossroad = "incrocio Bellissimo"
         self.data = {
             "name": self.crossroad,
             "latitude": 46.321,
@@ -32,9 +33,12 @@ class Bridge():
         self.setupSerial()
         self.setupMqttServer()
         self.setupMqttGateway()
+        self.last_server = time.time()*1000-31000
+        self.msg = 0
 
     def setupSerial(self):
-        serial_port = 'COM3'
+        # serial_port = 'COM3'
+        serial_port = '/dev/cu.usbmodem1301'
         serial_baudrate = 9600
         try:
             self.ser = serial.Serial(serial_port, serial_baudrate)
@@ -44,7 +48,8 @@ class Bridge():
             exit()
 
     def mqtt_callback(self, message):
-        self.msg = message
+        self.msg = int(message)
+        self.last_server = time.time()*1000
         print(f'Received message on topic: {self.topic} with payload: {self.msg}')
 
     def setupMqttServer(self):
@@ -56,10 +61,10 @@ class Bridge():
 
     def setupMqttGateway(self):
         self.client_g = MQTTClient()  # create new instance of camera
-        self.client_s.message()
-        self.client_s.connect()
+        self.client_g.message()
+        self.client_g.connect()
         print('\n')
-        self.client_s.subscribe("data_camera")
+        self.client_g.subscribe("data_camera")
         print('\n')
 
     def serialSend(self, plus_time):
@@ -71,11 +76,12 @@ class Bridge():
         print("Connected with result code " + str(rc))
 
     def loop(self):
+        t = datetime.now()
+        previous_time = t - timedelta(seconds=5)
+        plus_time = 0
+
         try:
             while (True):
-
-                # TODO comunicazione MQTT con object_detection/detection_YOLOv8.py
-                cars_count = 0
 
                 timestamp_message = self.client_g.get_timestamp_message()
                 print("Received timestamp_message_bridge:", timestamp_message)
@@ -85,36 +91,39 @@ class Bridge():
                 print("time_difference:", time_difference)
                 five_seconds = timedelta(seconds=5)
                 if time_difference >= five_seconds:
-                    if not self.server_connection:
-                        message_payload = self.client_g.get_message_payload()
-                        print("Received message_payload_bridge:", message_payload)
+                    if self.client_g.get_message_payload() is not None:
+                        now = time.time()*1000
+                        # se sono passati 30 secondi dall'ultima ricezione MQTT del server
+                        # allora si guarda il valore inviato dal gateway
+                        if now-self.last_server > 30000:
+                            message_payload = self.client_g.get_message_payload()
+                            print("Received message_payload_bridge:", message_payload)
 
-                        message_camera = np.array(message_payload)
+                            message_camera = np.array(message_payload)
 
-                        self.client_g.message_None()
+                            self.client_g.message_None()
 
-                        road_a = message_camera[0] + message_camera[2]
-                        road_b = message_camera[1] + message_camera[3]
-                        print("road_a:", road_a)
-                        print("road_b:", road_b)
-                        plus_time = 0
+                            road_a = message_camera[0] + message_camera[2]
+                            road_b = message_camera[1] + message_camera[3]
+                            print("road_a:", road_a)
+                            print("road_b:", road_b)
 
-                        if (road_a > road_b):
-                            plus_time = 2 * int(road_a)
-                        elif (road_a == road_b):
-                            plus_time = 0
-                        else:
-                            plus_time = -2 * int(road_b)
+                            if (road_a > road_b):
+                                plus_time = 10 * int(road_a)
+                            elif (road_a == road_b):
+                                plus_time = 0
+                            else:
+                                plus_time = -2 * int(road_b)
 
-                        print("plus_time", plus_time)
-                        print('\n')
-                        self.serialSend(plus_time)
+                            print("plus_time", plus_time)
+                            print('\n')
+                            self.serialSend(plus_time)
+                            previous_time = timestamp_message
                     else:
                         if plus_time != self.msg:
                             self.serialSend(self.msg)
                             plus_time = self.msg
 
-                    previous_time = timestamp_message
                 else:
                     print("Less than 5 seconds have passed since the message arrival compared to the current time.")
                     print('\n')

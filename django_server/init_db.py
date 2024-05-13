@@ -17,10 +17,10 @@ def init_db():
     print("Creazione db")
     # Creare istanze
     crossroad_1 = Crossroad(
-        name="via bella", latitude="10.10", longitude="20.20", cars_count="0,10,0,10")
+        name="incrocio bello", latitude="10.10", longitude="20.20", cars_count="0,10,0,10")
     crossroad_1.save()
     crossroad_2 = Crossroad(
-        name="via bellissima", latitude="10.10", longitude="20.20", cars_count="1,0,0,0")
+        name="incrocio bellissimo", latitude="10.10", longitude="20.20", cars_count="1,0,0,0")
     crossroad_2.save()
     webcam = Webcam(crossroad=crossroad_1)
     webcam.save()

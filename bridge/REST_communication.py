@@ -2,7 +2,9 @@ import requests
 import datetime
 import argparse
 import sys
-
+import requests
+from requests.exceptions import ConnectionError, Timeout, HTTPError
+import time
 
 try:
     from config import read_network
@@ -23,14 +25,43 @@ class RestAPI:
 
     def get_auth_token(self):
         token_url = self.base_url + 'token/'
-        response = requests.get(token_url, data={'password': self.user.get(
-            'password'), 'email': self.user.get('email'), 'username': self.user.get('username')})
-        if response.status_code == 200:
-            return response.json().get('token')
-        else:
-            print(f"Failed to get token. Status code: {response.status_code}")
-            print(response.json())
-            exit(1)
+        retry_count = 0
+        max_retries = 1
+
+        while retry_count < max_retries:
+            try:
+                response = requests.get(token_url, data={
+                    'password': self.user.get('password'),
+                    'email': self.user.get('email'),  # Assuming 'email' is the correct field rather than 'username'
+                    'username': self.user.get('username')
+                })
+                response.raise_for_status()  # This will raise an HTTPError for bad responses (4XX or 5XX)
+
+                # If response is successful, extract token and return
+                token_data = response.json()
+                if 'token' in token_data:
+                    return token_data['token']
+                else:
+                    print("Token not found in response. Here is the response data for debugging:")
+                    print(token_data)
+                    break
+
+            except (ConnectionError, Timeout) as e:
+                print(f"Network error: {e}. Retrying... ({retry_count + 1}/{max_retries})")
+                retry_count += 1
+                time.sleep(1)  # Wait for 2 seconds before retrying
+
+            except HTTPError as e:
+                print(f"HTTP error: {e}. Response status code: {response.status_code}")
+                print(response.text)
+                break
+
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+                break
+
+        print("Failed to obtain the token after maximum retries.")
+        return None
 
     def get_current_date(self):
         return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

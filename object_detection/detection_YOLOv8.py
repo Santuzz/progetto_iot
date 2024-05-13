@@ -10,6 +10,8 @@ import time
 
 import sys
 
+import urllib3
+
 from mqtt_client import MQTTClient
 # from REST_communication import RestAPI
 
@@ -92,8 +94,10 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def main():
+
     rest = RestAPI(user={'email': 'admin@admin.com', 'password': 'admin', 'username': 'admin'})
-    crossroad = "via Bella"
+
+    crossroad = "incrocio Bello"
     data = {
         "name": crossroad,
         "latitude": 46.321,
@@ -151,8 +155,6 @@ def main():
     cars_out = [0]*(len(zones)//2)
     frame_count = 0
 
-    # TODO ottenere il numero di macchine nelle varie zone per poi mandarlo al server.
-    # Allo stesso tempo il count deve essere disponibile al bridge dell'arduino con il semaforo
     try:
         while True:
             ret, frame = capture.read()
@@ -187,21 +189,26 @@ def main():
 
             # print(cars_in)
             # print(cars_out)
-
+            print(cars_in)
+            print(cars_out)
             if (cars_in != previous_in):
                 client.publish("data_camera", cars_in)
-                previous_in = cars_in
-            # Comunicazione HTTP ogni 30 cicli
-            print(cars_out)
-            print(previous_out)
-            if (frame_count % 30 == 0 and cars_out != previous_out):
-                valid = rest.send_count(crossroad, cars_out)
+                print("publishing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                previous_in = list(cars_in)
 
-                if 'Invalid' in valid:
-                    print(valid)
-                    exit(1)
+            if rest.token is None and frame_count % 60 == 0:
+                rest = RestAPI(user={'email': 'admin@admin.com', 'password': 'admin', 'username': 'admin'})
 
-                previous_out = list(cars_out)
+            else:
+                # Comunicazione HTTP ogni 30 cicli
+                if (frame_count % 1 == 0 and cars_out != previous_out) and rest.token is not None:
+                    valid = rest.send_count(crossroad, cars_out)
+
+                    if 'Invalid' in valid:
+                        print(valid)
+                        exit(1)
+
+                    previous_out = list(cars_out)
 
             frame_count += 1
 

@@ -403,7 +403,7 @@ class CrossroadAPI(APIView):
         crossroad = serializer.save()
         if 'cars_count' in request.data:
             if request.data['cars_count'] != cars_count:
-
+                print("Modificando la Streetcrossroad")
                 # Ottieni le strade vicine legate a questa crossroad.
                 street_crossroads = StreetCrossroad.objects.filter(crossroad=obj).order_by('index')
                 cars_count = crossroad.get_list_count()
