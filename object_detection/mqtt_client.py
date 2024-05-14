@@ -2,15 +2,23 @@ import paho.mqtt.client as mqtt  # import the client1
 import json
 from datetime import datetime
 
+import sys
+try:
+    from config import read_mqtt
+except ImportError:
+    sys.path.append('..')
+    from config import read_mqtt
+
 
 class MQTTClient:
-    def __init__(self, broker_address="localhost", broker_port=1883):
+    def __init__(self):
+        config = read_mqtt()
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self.client.on_message = self.on_message
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
-        self.broker_address = broker_address
-        self.broker_port = broker_port
+        self.broker_address = config['broker_host']
+        self.broker_port = config['broker_port']
         self.message_payload = None  # attribute to store the message payload
         self.timestamp_message = None  # attribute to store the timestamp of the message
 

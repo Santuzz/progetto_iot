@@ -69,7 +69,7 @@ class Bridge():
 
     def serialSend(self, plus_time):
         self.ser.write(b'\xFF')
-        self.ser.write(int.to_bytes(plus_time, length=1, byteorder='little'))
+        self.ser.write(int.to_bytes(plus_time, length=1, byteorder='little', signed=True))
         self.ser.write(b'\xFE')
 
     def on_connect(self, client, userdata, flags, rc):
@@ -102,18 +102,46 @@ class Bridge():
                             message_camera = np.array(message_payload)
 
                             self.client_g.message_None()
+                            # road verticale
+                            road_v = message_camera[0] + message_camera[2]
+                            # road orizzontale
+                            road_o = message_camera[1] + message_camera[3]
+                            print("road_v:", road_v)
+                            print("road_o:", road_o)
 
-                            road_a = message_camera[0] + message_camera[2]
-                            road_b = message_camera[1] + message_camera[3]
-                            print("road_a:", road_a)
-                            print("road_b:", road_b)
-
-                            if (road_a > road_b):
+                            """if (road_a > road_b):
                                 plus_time = 10 * int(road_a)
                             elif (road_a == road_b):
                                 plus_time = 0
                             else:
-                                plus_time = -2 * int(road_b)
+                                plus_time = -2 * int(road_b)"""
+
+                            """Significati di plus_time
+                            plus_time = 1 verde per la road A
+                            plus_time = -1 verde per la road B
+                            plus_time = 2 aumentare(poco) il verde per la road A(diminure il rosso)
+                            plus_time = -2 aumentare(poco) il verde per la road B(diminure il rosso)
+                            plus_time = 3 aumentare(medio) il verde per la road A(diminure il rosso)
+                            plus_time = -3 aumentare(medio) il verde per la road B(diminure il rosso)
+                            plus_time = 4 aumentare(alto) il verde per la road A(diminure il rosso)
+                            plus_time = -4 aumentare(alto) il verde per la road B(diminure il rosso)"""
+
+                            if road_o == 0 and road_v == 0:
+                                plus_time = 0
+                            elif road_v-road_o > 0:
+                                if road_v-road_o < 4:
+                                    plus_time = 1
+                                elif road_v-road_o < 8:
+                                    plus_time = 2
+                                else:
+                                    plus_time = 3
+                            else:
+                                if road_v-road_o > -4:
+                                    plus_time = -1
+                                elif road_v-road_o > -8:
+                                    plus_time = -2
+                                else:
+                                    plus_time = -3
 
                             print("plus_time", plus_time)
                             print('\n')
@@ -132,8 +160,8 @@ class Bridge():
                 time.sleep(1)
         except (KeyboardInterrupt):
             print("Loop interrupted")
-            self.client_g.stop()
-            self.client_s.disconnect()
+            self.client_g.disconnect()
+            self.client_s.stop()
             print("Serial disconnected")
             self.ser.close()
             exit(1)
