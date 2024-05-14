@@ -26,8 +26,10 @@ def traffic_update(instance):
     # Ottengo tutte le relazioni SC della street presente nella relazione SC che ha cambiato valore
     related_street_crossroads = StreetCrossroad.objects.filter(
         street=instance.street).exclude(crossroad=instance.crossroad)
-    traffic_level = 0  # plus_time nel bridge
+    plus_time = 0  # plus_time nel bridge
     traffic_cross = {}
+    road_o = 0
+    road_v = 0
     for rel in related_street_crossroads:
         # per ogni crossroad trovata dalle relazioni trovo le sue street
         streets_linked_to_crossroad = Street.objects.filter(
@@ -36,20 +38,37 @@ def traffic_update(instance):
         street_crossroads_excluding_initial = StreetCrossroad.objects.filter(
             street__in=streets_linked_to_crossroad).exclude(crossroad__name=rel.crossroad)
         for rel_s in street_crossroads_excluding_initial:
-            # Per ogni street delle relazioni vado a prendere la relazione che ha con il crossroad che ci interessa, in questo modo capisco se il valore di cars delle street trovate va aggiunto oppure sottratto
+            # Per ogni street delle relazioni vado a prendere la relazione che ha con il crossroad che ci interessa,
+            # in questo modo capisco se il valore di cars delle street trovate va aggiunto oppure sottratto
             rel_original = StreetCrossroad.objects.get(street=rel_s.street, crossroad=rel.crossroad)
             if rel_original.index % 2 == 0:
-                traffic_level += rel_s.cars
+                road_v += rel_s.cars
             else:
-                traffic_level -= rel_s.cars
-
-        result = traffic_level*read_increment()
-        rel.crossroad.traffic_level = result
+                road_o += rel_s.cars
+        if road_o == 0 and road_v == 0:
+            plus_time = 0
+        elif road_v-road_o > 0:
+            if road_v-road_o < 4:
+                plus_time = 1
+            elif road_v-road_o < 8:
+                plus_time = 2
+            else:
+                plus_time = 3
+        else:
+            if road_v-road_o > -4:
+                plus_time = -1
+            elif road_v-road_o > -8:
+                plus_time = -2
+            else:
+                plus_time = -3
+        result = plus_time*read_increment()
+        rel.crossroad.plus_time = result
         rel.crossroad.last_send = now()
         rel.crossroad.save()
-        traffic_cross[rel.crossroad.name] = traffic_level
-        traffic_level = 0
-    # ritorno tutti gli incroci che hanno cambiato il proprio traffic_level per via del cambiamento del numero di macchine nella relazione SC iniziale
+        traffic_cross[rel.crossroad.name] = plus_time
+        plus_time = 0
+    # ritorno tutti gli incroci che hanno cambiato il proprio traffic_level
+    # per via del cambiamento del numero di macchine nella relazione SC iniziale
     return traffic_cross
 
 
@@ -61,6 +80,6 @@ def handle_cars_update(sender, instance, created, **kwargs):
         print("Crossroad changed: "+str(traffic_cross))
 
         # tramite MQTT invio ad ogni incrocio ritornato il valore aggiornato del traffic_level
-        for crossroad, traffic_level in traffic_cross.items():
-            publish_message(crossroad, str(10*traffic_level))
+        for crossroad, plus_time in traffic_cross.items():
+            publish_message(crossroad, str(plus_time))
             # publish_message(crossroad, str(traffic_level))

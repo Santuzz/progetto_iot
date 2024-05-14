@@ -147,10 +147,10 @@ class Bridge():
                             print('\n')
                             self.serialSend(plus_time)
                             previous_time = timestamp_message
-                    else:
-                        if plus_time != self.msg:
-                            self.serialSend(self.msg)
-                            plus_time = self.msg
+                        else:
+                            if plus_time != self.msg:
+                                self.serialSend(self.msg)
+                                plus_time = self.msg
 
                 else:
                     print("Less than 5 seconds have passed since the message arrival compared to the current time.")

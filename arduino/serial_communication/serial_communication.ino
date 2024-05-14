@@ -144,12 +144,18 @@ int serialReceive(long *plus_time)
       ucInBuffer[stBufferIndex] = ucData;
       stBufferIndex++;
       //int r = useData(&plus_time);
+      if (stBufferIndex < BUFFDIM)  // at least header, plus_time, footer
+        return 0;
+
+      if (ucInBuffer[0] != 0xFF)
+        return 0;
       if(ucInBuffer[1] > 128){
         *plus_time= (256-ucInBuffer[1])*-1;
       }
       else
         *plus_time=ucInBuffer[1];
-
+      Serial.write("Serial Received: ");
+      Serial.write(ucInBuffer[1]);
       // Clear buffer
       for (stBufferIndex = 0; stBufferIndex < BUFFDIM; stBufferIndex++)
         ucInBuffer[stBufferIndex] = 0;
@@ -181,14 +187,7 @@ int useData(long **plus_time)
    
   // use of value
   *(*plus_time) = ucVal;
-  /*
-    A cosa serve send_interval?
-  */
-  if (ucVal < 0){
-    ucVal *= -1;
-  }
-  send_interval = ucVal;
-  return 1;
+  
 }
 
 void processPlusTime(int plus_time, long *road_intervalRed, long *road_intervalGreen) {
